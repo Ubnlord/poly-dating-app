@@ -56,6 +56,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 .step-dot.active{background:linear-gradient(135deg,#8b5cf6,#ec4899);transform:scale(1.2)}
 .step-line{transition:all 0.3s}
 .step-line.active{background:linear-gradient(135deg,#8b5cf6,#ec4899)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:0.01ms!important}}
 </style>
 </head>
 <body class="bg-gray-50 text-gray-800 overflow-hidden antialiased">
@@ -209,18 +210,35 @@ input:focus,textarea:focus,select:focus{outline:none}
 <main class="pt-20 pb-24 h-full overflow-y-auto hide-scrollbar" id="main-content">
 <!-- DISCOVERY -->
 <div id="discovery-view" class="px-4 max-w-md mx-auto fade-in">
-<div class="flex gap-2 overflow-x-auto hide-scrollbar mb-5 py-2">
+<section class="mb-5 rounded-3xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+<div class="flex items-center justify-between gap-3 mb-3">
+<div>
+<p class="text-xs font-semibold uppercase tracking-wider text-purple-500">Smart Discovery</p>
+<h2 class="text-xl font-bold text-gray-800 dark:text-white">Find your campus vibe</h2>
+</div>
+<button onclick="togglePreferencePanel()" class="px-3 py-2 rounded-full bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-bold hover:bg-purple-100 transition btn-press"><i class="fas fa-sliders mr-1"></i>Prefs</button>
+</div>
+<div class="relative mb-3">
+<i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+<input id="profile-search" type="search" oninput="renderCards()" placeholder="Search school, interest, state..." class="w-full pl-10 pr-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 text-sm">
+</div>
+<div id="preference-panel" class="hidden grid grid-cols-2 gap-3 mb-3">
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Goal</label><select id="pref-goal" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any goal</option><option>Serious relationship</option><option>Casual dating</option><option>Friendship first</option><option>Study buddy</option><option>Not sure yet</option></select></div>
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Verified</label><select id="pref-verified" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Everyone</option><option value="true">Verified only</option></select></div>
+</div>
+<div class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
 <button onclick="filterProfiles('all')" class="filter-btn px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-medium whitespace-nowrap shadow-lg transition" data-filter="all">All Majors</button>
 <button onclick="filterProfiles('Computer Science')" class="filter-btn px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium whitespace-nowrap shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-300 transition" data-filter="Computer Science">Computer Science</button>
 <button onclick="filterProfiles('Engineering')" class="filter-btn px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium whitespace-nowrap shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-300 transition" data-filter="Engineering">Engineering</button>
 <button onclick="filterProfiles('Design')" class="filter-btn px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium whitespace-nowrap shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-300 transition" data-filter="Design">Design</button>
 <button onclick="filterProfiles('Business Administration')" class="filter-btn px-4 py-2 rounded-full bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 text-sm font-medium whitespace-nowrap shadow-sm border border-gray-200 dark:border-gray-700 hover:border-purple-300 transition" data-filter="Business Administration">Business</button>
 </div>
+</section>
 <div id="cards-container"></div>
 <div id="empty-state" class="hidden text-center py-20">
 <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-4xl"><i class="fas fa-check-circle"></i></div>
 <h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">All caught up!</h3>
-<p class="text-gray-500 dark:text-gray-400 mb-6">Check back later for more profiles</p>
+<p class="text-gray-500 dark:text-gray-400 mb-6">Try changing your search, filters, or preferences</p>
 <button onclick="resetProfiles()" class="px-6 py-3 rounded-full bg-purple-600 text-white font-medium hover:bg-purple-700 transition shadow-lg">Refresh Feed</button>
 </div>
 </div>
@@ -363,13 +381,13 @@ input:focus,textarea:focus,select:focus{outline:none}
 
 <script>
 const defaultProfiles=[
-{id:101,name:"Amara Okafor",age:20,school:"Yaba College of Technology",major:"Computer Science",level:"ND 2",state:"Lagos",gender:"Female",bio:"CS student who loves hackathons and afrobeats. Looking for someone to debug code and life with.",interests:["Coding","Music","Gaming"],hobbies:"Playing chess, dancing",languages:"English, Igbo",relationshipGoal:"Study buddy",religion:"Christianity",image:"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&auto=format&fit=crop&q=80",compatibility:"92%",verified:true},
-{id:102,name:"Tunde Bakare",age:22,school:"Federal Polytechnic Ilaro",major:"Engineering",level:"HND 1",state:"Ogun",gender:"Male",bio:"Mechanical engineering student. I build things and break things. Coffee addict.",interests:["Sports","Art"],hobbies:"Football, sketching",languages:"English, Yoruba",relationshipGoal:"Serious relationship",religion:"Islam",image:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",compatibility:"85%",verified:true},
-{id:103,name:"Chioma Nwosu",age:19,school:"Lagos State Polytechnic",major:"Mass Communication",level:"ND 1",state:"Lagos",gender:"Female",bio:"Future broadcaster. I love storytelling, photography, and late-night conversations.",interests:["Photography","Music","Reading"],hobbies:"Writing, vlogging",languages:"English, Igbo",relationshipGoal:"Friendship first",religion:"Christianity",image:"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",compatibility:"88%",verified:true},
-{id:104,name:"Ibrahim Sule",age:21,school:"Kaduna Polytechnic",major:"Business Administration",level:"HND 2",state:"Kaduna",gender:"Male",bio:"Business mind with a creative soul. Into startups, design, and good food.",interests:["Art","Cooking","Music"],hobbies:"Cooking, basketball",languages:"English, Hausa",relationshipGoal:"Casual dating",religion:"Islam",image:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",compatibility:"79%",verified:true}
+{id:101,name:"Amara Okafor",age:20,school:"Yaba College of Technology",major:"Computer Science",level:"ND 2",state:"Lagos",gender:"Female",bio:"CS student who loves hackathons and afrobeats. Looking for someone to debug code and life with.",interests:["Coding","Music","Gaming"],hobbies:"Playing chess, dancing",languages:"English, Igbo",relationshipGoal:"Study buddy",religion:"Christianity",image:"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&auto=format&fit=crop&q=80",compatibility:"92%",compatibilityDetails:"3 shared interests · same state · study goals align",verified:true},
+{id:102,name:"Tunde Bakare",age:22,school:"Federal Polytechnic Ilaro",major:"Engineering",level:"HND 1",state:"Ogun",gender:"Male",bio:"Mechanical engineering student. I build things and break things. Coffee addict.",interests:["Sports","Art"],hobbies:"Football, sketching",languages:"English, Yoruba",relationshipGoal:"Serious relationship",religion:"Islam",image:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",compatibility:"85%",compatibilityDetails:"sports in common · close campus match",verified:true},
+{id:103,name:"Chioma Nwosu",age:19,school:"Lagos State Polytechnic",major:"Mass Communication",level:"ND 1",state:"Lagos",gender:"Female",bio:"Future broadcaster. I love storytelling, photography, and late-night conversations.",interests:["Photography","Music","Reading"],hobbies:"Writing, vlogging",languages:"English, Igbo",relationshipGoal:"Friendship first",religion:"Christianity",image:"https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",compatibility:"88%",compatibilityDetails:"music and photography overlap · Lagos campus",verified:true},
+{id:104,name:"Ibrahim Sule",age:21,school:"Kaduna Polytechnic",major:"Business Administration",level:"HND 2",state:"Kaduna",gender:"Male",bio:"Business mind with a creative soul. Into startups, design, and good food.",interests:["Art","Cooking","Music"],hobbies:"Cooking, basketball",languages:"English, Hausa",relationshipGoal:"Casual dating",religion:"Islam",image:"https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",compatibility:"79%",compatibilityDetails:"creative interests · food and events match",verified:true}
 ];
 
-let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null;
+let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
 
 function init(){
 const saved=localStorage.getItem('polyconnect_profiles');
@@ -567,9 +585,41 @@ document.getElementById('events-view').classList.add('hidden');
 document.getElementById('my-profile-view').classList.remove('hidden');
 }
 
+function togglePreferencePanel(){document.getElementById('preference-panel').classList.toggle('hidden');}
+
+function getCompatibility(profile){
+const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
+const mine=new Set((mp.interests||[]).map(i=>i.toLowerCase()));
+const theirs=profile.interests||[];
+const shared=theirs.filter(i=>mine.has(i.toLowerCase()));
+let score=parseInt(profile.compatibility)||72;
+if(shared.length)score+=shared.length*4;
+if(mp.state&&profile.state===mp.state)score+=5;
+if(mp.relationshipGoal&&profile.relationshipGoal===mp.relationshipGoal)score+=7;
+score=Math.min(99,score);
+const reasons=[];
+if(shared.length)reasons.push(shared.slice(0,2).join(', '));
+if(mp.state&&profile.state===mp.state)reasons.push('same state');
+if(mp.relationshipGoal&&profile.relationshipGoal===mp.relationshipGoal)reasons.push('same goal');
+return {score:score+'%',details:reasons.length?reasons.join(' · '):(profile.compatibilityDetails||'Campus and interest fit')};
+}
+
+function getFilteredProfiles(){
+const q=(document.getElementById('profile-search')?.value||'').trim().toLowerCase();
+const goal=document.getElementById('pref-goal')?.value||'';
+const verified=document.getElementById('pref-verified')?.value||'';
+return profiles.filter(p=>{
+if(currentFilter!=='all'&&p.major!==currentFilter)return false;
+if(goal&&p.relationshipGoal!==goal)return false;
+if(verified==='true'&&!p.verified)return false;
+if(!q)return true;
+return [p.name,p.school,p.major,p.state,p.bio,p.relationshipGoal,...(p.interests||[])].filter(Boolean).join(' ').toLowerCase().includes(q);
+});
+}
+
 function renderCards(){
 const container=document.getElementById('cards-container');
-const filtered=currentFilter==='all'?profiles:profiles.filter(p=>p.major===currentFilter);
+const filtered=getFilteredProfiles();
 if(filtered.length===0){container.innerHTML='';document.getElementById('empty-state').classList.remove('hidden');return;}
 document.getElementById('empty-state').classList.add('hidden');
 container.innerHTML=filtered.map((p,i)=>createCardHTML(p,i)).join('');
@@ -579,6 +629,7 @@ currentProfileIndex=0;
 function createCardHTML(p,i){
 const interestsHTML=p.interests?p.interests.map(int=>`<span class="px-3 py-1 rounded-lg bg-white/10 backdrop-blur-sm text-xs border border-white/20">${int}</span>`).join(''):'';
 const verifiedBadge=p.verified?`<span class="px-2 py-0.5 rounded-full bg-green-500/80 text-white text-[10px] font-bold ml-2"><i class="fas fa-check"></i></span>`:'';
+const match=getCompatibility(p);
 return`<div class="profile-card relative bg-white dark:bg-gray-800 rounded-3xl overflow-hidden card-shadow mb-4 transform transition-all duration-300 ${i>0?'hidden':''}" data-id="${p.id}">
 <div class="relative h-[28rem] sm:h-96">
 <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(p.name)}&background=8b5cf6&color=fff&size=400'">
@@ -590,13 +641,14 @@ return`<div class="profile-card relative bg-white dark:bg-gray-800 rounded-3xl o
 <div class="absolute bottom-0 left-0 right-0 p-6 text-white">
 <div class="flex justify-between items-end mb-2">
 <div><h2 class="text-3xl font-bold mb-1 flex items-center">${p.name}, ${p.age}${verifiedBadge}</h2><p class="text-white/90 text-sm flex items-center gap-2"><i class="fas fa-map-marker-alt text-pink-400"></i>${p.school||''}</p></div>
-<div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30"><span class="text-xl font-bold">${p.compatibility||'80%'}</span></div>
+<div class="text-right"><div class="w-14 h-14 ml-auto rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30"><span class="text-xl font-bold">${match.score}</span></div><p class="text-[10px] text-white/80 mt-1 max-w-[8rem]">${match.details}</p></div>
 </div>
 <p class="text-white/80 text-sm mb-4 line-clamp-2">${p.bio||''}</p>
 <div class="flex gap-2 flex-wrap">${interestsHTML}</div>
 </div>
 </div>
 <div class="p-6 flex justify-center gap-6 bg-white dark:bg-gray-800">
+<button onclick="undoSwipe()" class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 dark:text-amber-400 text-xl hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Undo last swipe"><i class="fas fa-rotate-left"></i></button>
 <button onclick="passProfile()" class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 text-2xl hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-110 transition-all shadow-lg btn-press"><i class="fas fa-times"></i></button>
 <button onclick="superLike()" class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:scale-110 transition-all shadow-md btn-press"><i class="fas fa-star"></i></button>
 <button onclick="likeProfile()" class="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center text-white text-2xl hover:scale-110 transition-all shadow-lg shadow-pink-200 dark:shadow-none btn-press"><i class="fas fa-heart"></i></button>
@@ -619,6 +671,7 @@ function getVisibleCard(){return document.querySelector('.profile-card:not(.hidd
 
 function likeProfile(){
 const card=getVisibleCard();if(!card)return;
+swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.classList.add('swipe-right');
 const pid=parseInt(card.dataset.id);
 const profile=profiles.find(p=>p.id===pid);
@@ -628,12 +681,14 @@ setTimeout(()=>{if(Math.random()>0.5&&currentMatchProfile)showMatchModal();nextC
 
 function passProfile(){
 const card=getVisibleCard();if(!card)return;
+swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.classList.add('swipe-left');
 setTimeout(()=>nextCard(),350);
 }
 
 function superLike(){
 const card=getVisibleCard();if(!card)return;
+swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.style.transform='scale(1.1)';card.style.opacity='0';
 const pid=parseInt(card.dataset.id);
 const profile=profiles.find(p=>p.id===pid);
@@ -651,7 +706,18 @@ else if(found&&card.classList.contains('hidden')){card.classList.remove('hidden'
 document.getElementById('empty-state').classList.remove('hidden');
 }
 
-function resetProfiles(){renderCards();}
+function resetProfiles(){swipeHistory=[];renderCards();}
+
+function undoSwipe(){
+const last=swipeHistory.pop();
+if(!last){showToast('Nothing to undo yet','error');return;}
+renderCards();
+const cards=[...document.querySelectorAll('.profile-card')];
+cards.forEach(card=>card.classList.add('hidden'));
+const target=cards.find(card=>parseInt(card.dataset.id)===last.id);
+if(target){target.classList.remove('hidden','swipe-left','swipe-right');target.classList.add('fade-in');showToast('Last swipe restored');}
+else showToast('That profile is not in the current filters','error');
+}
 
 function showMatchModal(){
 const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
