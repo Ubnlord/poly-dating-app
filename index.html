@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>PolyConnect</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -362,6 +365,54 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 
 <script>
+// Replace these placeholder values with your Firebase web app config.
+// Firebase is optional while developing locally: the app falls back to localStorage
+// until every value below is filled in from the Firebase console.
+const firebaseConfig={
+apiKey:"YOUR_API_KEY",
+authDomain:"YOUR_PROJECT_ID.firebaseapp.com",
+projectId:"YOUR_PROJECT_ID",
+storageBucket:"YOUR_PROJECT_ID.appspot.com",
+messagingSenderId:"YOUR_MESSAGING_SENDER_ID",
+appId:"YOUR_APP_ID"
+};
+
+let firebaseApp=null,firebaseAuth=null,firebaseDb=null;
+const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
+const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
+
+function initFirebase(){
+if(!hasFirebaseConfig()){console.info('Firebase is not configured yet. Using localStorage fallback.');return;}
+if(!window.firebase){console.warn('Firebase SDK did not load. Using localStorage fallback.');return;}
+firebaseApp=firebase.initializeApp(firebaseConfig);
+firebaseAuth=firebase.auth();
+firebaseDb=firebase.firestore();
+firebaseAuth.onAuthStateChanged(async user=>{
+if(!user)return;
+localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
+await loadFirebaseProfile(user.uid);
+const myProfile=localStorage.getItem('polyconnect_myprofile');
+if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
+else showWizard();
+});
+}
+
+async function loadFirebaseProfile(uid){
+if(!firebaseReady()||!uid)return;
+const doc=await firebaseDb.collection('profiles').doc(uid).get();
+if(doc.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(doc.data()));
+}
+
+async function saveFirebaseProfile(profile){
+if(!firebaseReady()||!firebaseAuth.currentUser)return;
+await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(profile,{merge:true});
+}
+
+async function saveFirebaseMatch(profile){
+if(!firebaseReady()||!firebaseAuth.currentUser||!profile)return;
+await firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).collection('matches').doc(String(profile.id)).set({id:profile.id,name:profile.name,image:profile.image,time:'Just now',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+}
+
 const defaultProfiles=[
 {id:101,name:"Amara Okafor",age:20,school:"Yaba College of Technology",major:"Computer Science",level:"ND 2",state:"Lagos",gender:"Female",bio:"CS student who loves hackathons and afrobeats. Looking for someone to debug code and life with.",interests:["Coding","Music","Gaming"],hobbies:"Playing chess, dancing",languages:"English, Igbo",relationshipGoal:"Study buddy",religion:"Christianity",image:"https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=800&auto=format&fit=crop&q=80",compatibility:"92%",verified:true},
 {id:102,name:"Tunde Bakare",age:22,school:"Federal Polytechnic Ilaro",major:"Engineering",level:"HND 1",state:"Ogun",gender:"Male",bio:"Mechanical engineering student. I build things and break things. Coffee addict.",interests:["Sports","Art"],hobbies:"Football, sketching",languages:"English, Yoruba",relationshipGoal:"Serious relationship",religion:"Islam",image:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",compatibility:"85%",verified:true},
@@ -372,6 +423,7 @@ const defaultProfiles=[
 let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null;
 
 function init(){
+initFirebase();
 const saved=localStorage.getItem('polyconnect_profiles');
 profiles=saved?JSON.parse(saved):[...defaultProfiles];
 if(!saved)saveProfiles();
@@ -386,19 +438,35 @@ setupReactionMenu();
 function saveProfiles(){localStorage.setItem('polyconnect_profiles',JSON.stringify(profiles));}
 function toggleAuthMode(){document.getElementById('login-form').classList.toggle('hidden');document.getElementById('signup-form').classList.toggle('hidden');}
 
-function doLogin(){
+async function doLogin(){
 const email=document.getElementById('login-email').value,pass=document.getElementById('login-password').value;
 if(!email||!pass){showToast('Please fill in all fields','error');return;}
+if(firebaseReady()){
+firebaseAuth.signInWithEmailAndPassword(email,pass).then(credential=>{
+const user=credential.user;
+localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
+showToast('Welcome back!');
+}).catch(error=>showToast(error.message,'error'));
+return;
+}
 const users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
 const user=users.find(u=>u.email===email&&u.password===pass);
 if(user){localStorage.setItem('polyconnect_user',JSON.stringify(user));const mp=localStorage.getItem('polyconnect_myprofile');if(mp){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();showToast('Welcome back, '+user.name+'!');}
 else showToast('Invalid email or password','error');
 }
 
-function doSignup(){
+async function doSignup(){
 const name=document.getElementById('signup-name').value,email=document.getElementById('signup-email').value,pass=document.getElementById('signup-password').value;
 if(!name||!email||!pass){showToast('Please fill in all fields','error');return;}
 if(pass.length<6){showToast('Password must be at least 6 characters','error');return;}
+if(firebaseReady()){
+firebaseAuth.createUserWithEmailAndPassword(email,pass).then(async credential=>{
+await credential.user.updateProfile({displayName:name});
+localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name,email}));
+showWizard();showToast('Account created! Complete your profile.');
+}).catch(error=>showToast(error.message,'error'));
+return;
+}
 let users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
 if(users.find(u=>u.email===email)){showToast('Email already registered','error');return;}
 users.push({name,email,password:pass});
@@ -507,6 +575,7 @@ image:photo&&!photo.includes(window.location.href)?photo:'https://ui-avatars.com
 selfie:selfieDataUrl,verified:!!selfieDataUrl,createdAt:Date.now()
 };
 localStorage.setItem('polyconnect_myprofile',JSON.stringify(myProfile));
+saveFirebaseProfile(myProfile).catch(error=>showToast(error.message,'error'));
 showApp();updateHeaderAvatar();renderCards();renderConversations();
 showToast('Profile created! Welcome to PolyConnect.');
 }
@@ -668,7 +737,7 @@ function closeMatchModal(){document.getElementById('match-modal').classList.add(
 function addMatch(profile){
 if(!profile)return;
 let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]');
-if(!matches.find(m=>m.id===profile.id)){matches.unshift({id:profile.id,name:profile.name,image:profile.image,time:'Just now'});localStorage.setItem('polyconnect_matches',JSON.stringify(matches));renderConversations();}
+if(!matches.find(m=>m.id===profile.id)){matches.unshift({id:profile.id,name:profile.name,image:profile.image,time:'Just now'});localStorage.setItem('polyconnect_matches',JSON.stringify(matches));saveFirebaseMatch(profile).catch(error=>showToast(error.message,'error'));renderConversations();}
 }
 
 function openChatFromMatch(){if(currentMatchProfile)openChat(currentMatchProfile.id);}
