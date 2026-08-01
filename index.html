@@ -7,9 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>PolyConnect</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-analytics-compat.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -383,19 +384,17 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 
 <script>
-// Replace these placeholder values with your Firebase web app config.
-// Firebase is optional while developing locally: the app falls back to localStorage
-// until every value below is filled in from the Firebase console.
 const firebaseConfig={
-apiKey:"YOUR_API_KEY",
-authDomain:"YOUR_PROJECT_ID.firebaseapp.com",
-projectId:"YOUR_PROJECT_ID",
-storageBucket:"YOUR_PROJECT_ID.appspot.com",
-messagingSenderId:"YOUR_MESSAGING_SENDER_ID",
-appId:"YOUR_APP_ID"
+apiKey:"AIzaSyADgTx5XZoNXemnrqAZzYV37u0DTa130ew",
+authDomain:"poly-dating-app-5354c.firebaseapp.com",
+projectId:"poly-dating-app-5354c",
+storageBucket:"poly-dating-app-5354c.firebasestorage.app",
+messagingSenderId:"465289858492",
+appId:"1:465289858492:web:c43afae8183b2d7833afb9",
+measurementId:"G-TD810WXVH8"
 };
 
-let firebaseApp=null,firebaseAuth=null,firebaseDb=null;
+let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseAnalytics=null;
 const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
@@ -405,6 +404,7 @@ if(!window.firebase){console.warn('Firebase SDK did not load. Using localStorage
 firebaseApp=firebase.initializeApp(firebaseConfig);
 firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
+if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user)return;
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));

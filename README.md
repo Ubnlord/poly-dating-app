@@ -4,12 +4,12 @@ PolyConnect is a single-page prototype for a polytechnic student dating app.
 
 ## Firebase setup
 
-The app can run without Firebase while you are developing locally. It uses `localStorage` until you replace the placeholder Firebase settings in `index.html`.
+PolyConnect is configured for the `poly-dating-app-5354c` Firebase web app in `index.html`. The page loads Firebase App, Authentication, Cloud Firestore, and Analytics from the Firebase JavaScript SDK CDN.
 
-1. Create a Firebase project in the Firebase console.
-2. Add a Web app to the project.
-3. Enable **Authentication** with the Email/Password provider.
-4. Create a **Cloud Firestore** database.
-5. Copy your Firebase web app config into the `firebaseConfig` object in `index.html`.
+To use the connected backend, make sure the Firebase project has:
 
-When configured, PolyConnect uses Firebase Authentication for sign up/login and stores completed profiles plus matches in Firestore. If Firebase is not configured or the SDK cannot load, the app continues to use the local demo storage.
+1. **Authentication** enabled with the Email/Password provider.
+2. A **Cloud Firestore** database for saved profiles and matches.
+3. Analytics enabled for the configured measurement ID.
+
+If the Firebase SDK cannot load, the app continues to use the local demo storage.
