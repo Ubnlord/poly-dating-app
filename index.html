@@ -66,12 +66,21 @@ input:focus,textarea:focus,select:focus{outline:none}
 <body class="bg-gray-50 text-gray-800 overflow-hidden antialiased">
 
 <!-- LOGIN SCREEN -->
-<div id="login-screen" class="fixed inset-0 z-[100] bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex flex-col items-center justify-center p-6">
+<div id="login-screen" class="fixed inset-0 z-[100] bg-gradient-to-br from-purple-600 via-purple-700 to-pink-600 flex flex-col items-center justify-center p-6 overflow-y-auto">
 <div class="w-full max-w-sm slide-up">
 <div class="text-center mb-10">
 <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/20 backdrop-blur-lg flex items-center justify-center text-white text-3xl shadow-xl"><i class="fas fa-graduation-cap"></i></div>
 <h1 class="text-4xl font-bold text-white mb-2">PolyConnect</h1>
 <p class="text-white/80 text-sm">Verified Dating for Polytechnic Students</p>
+<div class="mt-4 rounded-2xl bg-white/15 border border-white/20 p-4 text-left text-white shadow-lg">
+<p class="text-xs font-bold uppercase tracking-wider text-pink-100 mb-2">Latest free upgrades live</p>
+<ul class="space-y-1.5 text-sm text-white/90">
+<li><i class="fas fa-shield-heart mr-2 text-pink-200"></i>Safety Center, report, block, unmatch</li>
+<li><i class="fas fa-sliders mr-2 text-pink-200"></i>Age, gender, state, goal and verified filters</li>
+<li><i class="fas fa-download mr-2 text-pink-200"></i>Profile edit, local data export and delete</li>
+</ul>
+<p class="mt-3 text-[11px] text-white/60">Build: free-upgrades-v3</p>
+</div>
 </div>
 <div id="login-form" class="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
 <h2 class="text-xl font-bold text-white mb-5 text-center">Welcome Back</h2>
@@ -79,7 +88,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div><input type="email" id="login-email" placeholder="student@poly.edu" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div><input type="password" id="login-password" placeholder="Password" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <button onclick="doLogin()" class="w-full py-3.5 rounded-xl bg-white text-purple-700 font-bold shadow-lg btn-press transition hover:bg-gray-100">Log In</button>
-<p class="text-center text-white/70 text-sm">No account? <button onclick="toggleAuthMode()" class="text-white font-semibold underline">Sign Up</button></p>
+<div class="flex items-center justify-between text-white/70 text-sm"><button onclick="sendPasswordReset()" class="text-white/90 font-medium underline">Forgot password?</button><span>No account? <button onclick="toggleAuthMode()" class="text-white font-semibold underline">Sign Up</button></span></div>
 </div>
 </div>
 <div id="signup-form" class="hidden bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
@@ -88,6 +97,8 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div><input type="text" id="signup-name" placeholder="Full Name" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div><input type="email" id="signup-email" placeholder="student@poly.edu" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div><input type="password" id="signup-password" placeholder="Min 6 characters" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
+<div class="flex items-start gap-2 text-white/80 text-xs"><input id="signup-consent" type="checkbox" class="mt-0.5 accent-purple-600"><label for="signup-consent">I am 18+ and agree to the safety rules, respectful conduct, and data storage needed to run my account.</label></div>
+<p class="text-white/50 text-[11px] -mt-2">If Firebase is unavailable, signup will automatically continue in free local demo mode.</p>
 <button onclick="doSignup()" class="w-full py-3.5 rounded-xl bg-white text-purple-700 font-bold shadow-lg btn-press transition hover:bg-gray-100">Sign Up</button>
 <p class="text-center text-white/70 text-sm">Have an account? <button onclick="toggleAuthMode()" class="text-white font-semibold underline">Log In</button></p>
 </div>
@@ -127,7 +138,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 <div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Full Name</label><input type="text" id="wiz-name" placeholder="Your full name" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent"></div>
 <div class="grid grid-cols-2 gap-3">
-<div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Age</label><input type="number" id="wiz-age" placeholder="20" min="16" max="35" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent"></div>
+<div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Age</label><input type="number" id="wiz-age" placeholder="20" min="18" max="35" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent"></div>
 <div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Gender</label><select id="wiz-gender" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent"><option value="">Select</option><option>Male</option><option>Female</option><option>Non-binary</option></select></div>
 </div>
 <div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Short Bio</label><textarea id="wiz-bio" rows="3" placeholder="Tell others about yourself..." class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent resize-none"></textarea></div>
@@ -201,7 +212,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <header class="fixed top-0 w-full z-50 glass px-4 py-3 flex justify-between items-center">
 <div class="flex items-center gap-2">
 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg"><i class="fas fa-graduation-cap"></i></div>
-<h1 class="text-xl font-bold gradient-text">PolyConnect</h1>
+<div><h1 class="text-xl font-bold gradient-text leading-tight">PolyConnect</h1><p class="text-[10px] text-gray-500 dark:text-gray-400 -mt-0.5">free-upgrades-v3</p></div>
 </div>
 <div class="flex gap-2">
 <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-moon" id="dark-icon"></i></button>
@@ -214,6 +225,16 @@ input:focus,textarea:focus,select:focus{outline:none}
 <main class="pt-20 pb-24 h-full overflow-y-auto hide-scrollbar" id="main-content">
 <!-- DISCOVERY -->
 <div id="discovery-view" class="px-4 max-w-md mx-auto fade-in">
+<section class="mb-4 rounded-3xl bg-gradient-to-r from-purple-600 to-pink-500 p-4 text-white shadow-lg">
+<div class="flex items-start gap-3">
+<div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"><i class="fas fa-bolt"></i></div>
+<div>
+<p class="text-xs font-bold uppercase tracking-wider text-white/70">New in this build</p>
+<h2 class="text-lg font-bold">Free safety and discovery upgrades are live</h2>
+<p class="text-sm text-white/80 mt-1">Use Prefs for age/gender/state filters, tap the flag on cards to report/block, or open Safety for blocked users and reports.</p>
+</div>
+</div>
+</section>
 <section class="mb-5 rounded-3xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700">
 <div class="flex items-center justify-between gap-3 mb-3">
 <div>
@@ -229,6 +250,10 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div id="preference-panel" class="hidden grid grid-cols-2 gap-3 mb-3">
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">Goal</label><select id="pref-goal" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any goal</option><option>Serious relationship</option><option>Casual dating</option><option>Friendship first</option><option>Study buddy</option><option>Not sure yet</option></select></div>
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">Verified</label><select id="pref-verified" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Everyone</option><option value="true">Verified only</option></select></div>
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Gender</label><select id="pref-gender" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any gender</option><option>Male</option><option>Female</option><option>Non-binary</option></select></div>
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">State</label><select id="pref-state" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any state</option><option>Lagos</option><option>Abuja</option><option>Kaduna</option><option>Ogun</option><option>Oyo</option><option>Edo</option><option>Rivers</option><option>Enugu</option><option>Other</option></select></div>
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Min age</label><input id="pref-min-age" type="number" min="18" max="35" placeholder="18" oninput="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"></div>
+<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Max age</label><input id="pref-max-age" type="number" min="18" max="35" placeholder="35" oninput="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"></div>
 </div>
 <div class="flex gap-2 overflow-x-auto hide-scrollbar py-1">
 <button onclick="filterProfiles('all')" class="filter-btn px-4 py-2 rounded-full bg-purple-600 text-white text-sm font-medium whitespace-nowrap shadow-lg transition" data-filter="all">All Majors</button>
@@ -276,7 +301,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 text-xs font-medium">Featured</span>
 </div>
 <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Join students from all polytechnics for an evening of games, music, and networking!</p>
-<button class="w-full py-2.5 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition">Join Event</button>
+<button onclick="joinEvent('Polytechnic Mixer Night',this)" class="w-full py-2.5 rounded-xl bg-purple-600 text-white font-medium hover:bg-purple-700 transition">Join Event</button>
 </div>
 </div>
 <div class="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition cursor-pointer">
@@ -284,9 +309,32 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div class="p-4">
 <h3 class="font-bold text-lg text-gray-800 dark:text-white mb-1">Hackathon & Chill</h3>
 <p class="text-sm text-gray-500 dark:text-gray-400 mb-3"><i class="fas fa-calendar-alt mr-1"></i> Sat, Mar 15 - 9:00 AM</p>
-<button class="w-full py-2.5 rounded-xl border-2 border-purple-600 text-purple-600 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">Interested</button>
+<button onclick="joinEvent('Hackathon & Chill',this)" class="w-full py-2.5 rounded-xl border-2 border-purple-600 text-purple-600 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition">Interested</button>
 </div>
 </div>
+</div>
+</div>
+
+<!-- SAFETY CENTER -->
+<div id="safety-view" class="hidden px-4 max-w-md mx-auto fade-in pb-8">
+<h2 class="text-2xl font-bold mb-2 text-gray-800 dark:text-white">Safety Center</h2>
+<p class="text-gray-500 dark:text-gray-400 mb-5">Free, built-in controls to keep the community safer.</p>
+<div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
+<h3 class="font-bold text-gray-800 dark:text-white mb-3"><i class="fas fa-user-shield text-purple-500 mr-2"></i>Community rules</h3>
+<ul class="space-y-2 text-sm text-gray-600 dark:text-gray-300 list-disc pl-5">
+<li>Only adults 18+ can create accounts.</li>
+<li>Use your real student identity and current profile photos.</li>
+<li>No harassment, spam, impersonation, pressure, or explicit content.</li>
+<li>Meet in public campus spaces and tell a friend where you are going.</li>
+</ul>
+</div>
+<div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 mb-4">
+<h3 class="font-bold text-gray-800 dark:text-white mb-3"><i class="fas fa-flag text-red-500 mr-2"></i>My reports</h3>
+<div id="reports-list" class="space-y-2 text-sm text-gray-500 dark:text-gray-400"></div>
+</div>
+<div class="bg-white dark:bg-gray-800 rounded-3xl p-5 shadow-sm border border-gray-100 dark:border-gray-700">
+<h3 class="font-bold text-gray-800 dark:text-white mb-3"><i class="fas fa-ban text-gray-500 mr-2"></i>Blocked users</h3>
+<div id="blocked-list" class="space-y-2 text-sm text-gray-500 dark:text-gray-400"></div>
 </div>
 </div>
 
@@ -304,6 +352,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <nav class="fixed bottom-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg border-t border-gray-200 dark:border-gray-800 px-6 py-2.5 flex justify-around items-center z-50">
 <button onclick="switchTab('discovery')" class="nav-btn active flex flex-col items-center gap-0.5 text-purple-600 transition py-1" data-tab="discovery"><i class="fas fa-compass text-xl"></i><span class="text-[10px] font-medium">Discover</span></button>
 <button onclick="switchTab('events')" class="nav-btn flex flex-col items-center gap-0.5 text-gray-400 hover:text-purple-600 transition py-1" data-tab="events"><i class="fas fa-calendar-star text-xl"></i><span class="text-[10px] font-medium">Events</span></button>
+<button onclick="switchTab('safety')" class="nav-btn flex flex-col items-center gap-0.5 text-gray-400 hover:text-purple-600 transition py-1" data-tab="safety"><i class="fas fa-shield-heart text-xl"></i><span class="text-[10px] font-medium">Safety</span></button>
 <button onclick="switchTab('matches')" class="nav-btn flex flex-col items-center gap-0.5 text-gray-400 hover:text-purple-600 transition relative py-1" data-tab="matches"><i class="fas fa-comment-dots text-xl"></i><span class="text-[10px] font-medium">Matches</span><span id="msg-badge" class="absolute -top-0.5 -right-2 w-4 h-4 bg-red-500 rounded-full text-white text-[9px] flex items-center justify-center font-bold hidden">0</span></button>
 <button onclick="showMyProfile()" class="nav-btn flex flex-col items-center gap-0.5 text-gray-400 hover:text-purple-600 transition py-1" data-tab="profile"><i class="fas fa-user text-xl"></i><span class="text-[10px] font-medium">Profile</span></button>
 </nav>
@@ -460,37 +509,64 @@ async function doLogin(){
 const email=document.getElementById('login-email').value,pass=document.getElementById('login-password').value;
 if(!email||!pass){showToast('Please fill in all fields','error');return;}
 if(firebaseReady()){
-firebaseAuth.signInWithEmailAndPassword(email,pass).then(credential=>{
+try{
+const credential=await firebaseAuth.signInWithEmailAndPassword(email,pass);
 const user=credential.user;
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
 showToast('Welcome back!');
-}).catch(error=>showToast(error.message,'error'));
 return;
+}catch(error){
+console.warn('Firebase login failed, checking local demo accounts:',error);
 }
+}
+loginLocalAccount(email,pass);
+}
+
+function loginLocalAccount(email,pass){
 const users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
 const user=users.find(u=>u.email===email&&u.password===pass);
 if(user){localStorage.setItem('polyconnect_user',JSON.stringify(user));const mp=localStorage.getItem('polyconnect_myprofile');if(mp){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();showToast('Welcome back, '+user.name+'!');}
 else showToast('Invalid email or password','error');
 }
 
+async function sendPasswordReset(){
+const email=document.getElementById('login-email').value.trim();
+if(!email){showToast('Enter your email first','error');return;}
+if(firebaseReady()){
+firebaseAuth.sendPasswordResetEmail(email).then(()=>showToast('Password reset email sent')).catch(error=>showToast(error.message,'error'));
+return;
+}
+showToast('Local demo accounts cannot send reset email','error');
+}
+
 async function doSignup(){
-const name=document.getElementById('signup-name').value,email=document.getElementById('signup-email').value,pass=document.getElementById('signup-password').value;
+const name=document.getElementById('signup-name').value.trim(),email=document.getElementById('signup-email').value.trim(),pass=document.getElementById('signup-password').value;
 if(!name||!email||!pass){showToast('Please fill in all fields','error');return;}
+if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent','error');return;}
 if(pass.length<6){showToast('Password must be at least 6 characters','error');return;}
 if(firebaseReady()){
-firebaseAuth.createUserWithEmailAndPassword(email,pass).then(async credential=>{
+try{
+const credential=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
 await credential.user.updateProfile({displayName:name});
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name,email}));
 showWizard();showToast('Account created! Complete your profile.');
-}).catch(error=>showToast(error.message,'error'));
 return;
+}catch(error){
+console.warn('Firebase signup failed, falling back to local demo account:',error);
+showToast('Firebase signup unavailable. Using local demo mode.','error');
 }
+}
+createLocalAccount(name,email,pass);
+}
+
+function createLocalAccount(name,email,pass){
 let users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
-if(users.find(u=>u.email===email)){showToast('Email already registered','error');return;}
-users.push({name,email,password:pass});
+if(users.find(u=>u.email===email)){showToast('Email already registered locally','error');return;}
+const user={name,email,password:pass,localOnly:true};
+users.push(user);
 localStorage.setItem('polyconnect_users',JSON.stringify(users));
-localStorage.setItem('polyconnect_user',JSON.stringify({name,email,password:pass}));
-showWizard();showToast('Account created! Complete your profile.');
+localStorage.setItem('polyconnect_user',JSON.stringify(user));
+showWizard();showToast('Local demo account created! Complete your profile.');
 }
 
 function showApp(){document.getElementById('login-screen').classList.add('hidden');document.getElementById('profile-wizard').classList.add('hidden');document.getElementById('app').classList.remove('hidden');}
@@ -509,7 +585,7 @@ else btn.innerHTML='Continue <i class="fas fa-arrow-right ml-2"></i>';
 }
 
 function nextWizardStep(){
-if(wizardStep===1){if(!document.getElementById('wiz-name').value||!document.getElementById('wiz-age').value||!document.getElementById('wiz-gender').value){showToast('Please fill in all fields','error');return;}}
+if(wizardStep===1){const age=parseInt(document.getElementById('wiz-age').value);if(!document.getElementById('wiz-name').value||!age||!document.getElementById('wiz-gender').value){showToast('Please fill in all fields','error');return;}if(age<18){showToast('You must be 18+ to use PolyConnect','error');return;}}
 if(wizardStep===2){if(!document.getElementById('wiz-school').value||!document.getElementById('wiz-dept').value||!document.getElementById('wiz-level').value){showToast('Please fill in all fields','error');return;}}
 if(wizardStep<4){wizardStep++;updateWizardUI();}else finishWizard();
 }
@@ -619,10 +695,11 @@ document.querySelectorAll('.nav-btn').forEach(btn=>{
 const active=btn.dataset.tab===tab;
 btn.classList.toggle('text-purple-600',active);btn.classList.toggle('text-gray-400',!active);
 });
-['discovery-view','matches-view','events-view','my-profile-view'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+['discovery-view','matches-view','events-view','safety-view','my-profile-view'].forEach(id=>document.getElementById(id).classList.add('hidden'));
 if(tab==='discovery')document.getElementById('discovery-view').classList.remove('hidden');
 else if(tab==='matches')document.getElementById('matches-view').classList.remove('hidden');
 else if(tab==='events')document.getElementById('events-view').classList.remove('hidden');
+else if(tab==='safety'){document.getElementById('safety-view').classList.remove('hidden');renderSafetyCenter();}
 }
 
 function showMyProfile(){
@@ -646,11 +723,13 @@ ${mp.verified?'<span class="inline-flex items-center gap-1 px-3 py-1 rounded-ful
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Languages</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.languages||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Hobbies</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.hobbies||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold mb-2">Interests</p><div class="flex flex-wrap gap-2">${intTags}</div></div>
+<div class="grid grid-cols-2 gap-3 pt-3"><button onclick="editMyProfile()" class="py-3 rounded-xl bg-purple-600 text-white font-bold btn-press">Edit Profile</button><button onclick="exportMyData()" class="py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold btn-press">Export Data</button><button onclick="deleteAccountData()" class="col-span-2 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 font-bold btn-press">Delete Data</button></div>
 </div>`;
 }
 document.getElementById('discovery-view').classList.add('hidden');
 document.getElementById('matches-view').classList.add('hidden');
 document.getElementById('events-view').classList.add('hidden');
+document.getElementById('safety-view').classList.add('hidden');
 document.getElementById('my-profile-view').classList.remove('hidden');
 }
 
@@ -677,10 +756,20 @@ function getFilteredProfiles(){
 const q=(document.getElementById('profile-search')?.value||'').trim().toLowerCase();
 const goal=document.getElementById('pref-goal')?.value||'';
 const verified=document.getElementById('pref-verified')?.value||'';
+const gender=document.getElementById('pref-gender')?.value||'';
+const state=document.getElementById('pref-state')?.value||'';
+const minAge=parseInt(document.getElementById('pref-min-age')?.value||'');
+const maxAge=parseInt(document.getElementById('pref-max-age')?.value||'');
+const blocked=getBlockedIds();
 return profiles.filter(p=>{
+if(blocked.includes(Number(p.id)))return false;
 if(currentFilter!=='all'&&p.major!==currentFilter)return false;
 if(goal&&p.relationshipGoal!==goal)return false;
 if(verified==='true'&&!p.verified)return false;
+if(gender&&p.gender!==gender)return false;
+if(state&&p.state!==state)return false;
+if(minAge&&p.age<minAge)return false;
+if(maxAge&&p.age>maxAge)return false;
 if(!q)return true;
 return [p.name,p.school,p.major,p.state,p.bio,p.relationshipGoal,...(p.interests||[])].filter(Boolean).join(' ').toLowerCase().includes(q);
 });
@@ -718,6 +807,7 @@ return`<div class="profile-card relative bg-white dark:bg-gray-800 rounded-3xl o
 </div>
 <div class="p-6 flex justify-center gap-6 bg-white dark:bg-gray-800">
 <button onclick="undoSwipe()" class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 dark:text-amber-400 text-xl hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Undo last swipe"><i class="fas fa-rotate-left"></i></button>
+<button onclick="reportUser(${p.id},'Reported from discovery card')" class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500 dark:text-red-300 text-xl hover:bg-red-100 dark:hover:bg-red-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Report and block"><i class="fas fa-flag"></i></button>
 <button onclick="passProfile()" class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 text-2xl hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-110 transition-all shadow-lg btn-press"><i class="fas fa-times"></i></button>
 <button onclick="superLike()" class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:scale-110 transition-all shadow-md btn-press"><i class="fas fa-star"></i></button>
 <button onclick="likeProfile()" class="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center text-white text-2xl hover:scale-110 transition-all shadow-lg shadow-pink-200 dark:shadow-none btn-press"><i class="fas fa-heart"></i></button>
@@ -745,7 +835,8 @@ card.classList.add('swipe-right');
 const pid=parseInt(card.dataset.id);
 const profile=profiles.find(p=>p.id===pid);
 if(profile){currentMatchProfile=profile;}
-setTimeout(()=>{if(Math.random()>0.5&&currentMatchProfile)showMatchModal();nextCard();},350);
+recordLike(pid);
+setTimeout(()=>{if(isMutualMatch(pid)&&currentMatchProfile)showMatchModal();else showToast('Like sent');nextCard();},350);
 }
 
 function passProfile(){
@@ -787,6 +878,35 @@ const target=cards.find(card=>parseInt(card.dataset.id)===last.id);
 if(target){target.classList.remove('hidden','swipe-left','swipe-right');target.classList.add('fade-in');showToast('Last swipe restored');}
 else showToast('That profile is not in the current filters','error');
 }
+
+function editMyProfile(){
+const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
+showWizard();
+setTimeout(()=>{
+const set=(id,value)=>{const el=document.getElementById(id);if(el&&value!==undefined&&value!==null)el.value=value;};
+set('wiz-name',mp.name);set('wiz-age',mp.age);set('wiz-gender',mp.gender);set('wiz-bio',mp.bio);set('wiz-school',mp.school);set('wiz-dept',mp.department);set('wiz-level',mp.level);set('wiz-state',mp.state);set('wiz-hobbies',mp.hobbies);set('wiz-goal',mp.relationshipGoal);set('wiz-religion',mp.religion);set('wiz-languages',mp.languages);
+wizardInterests=Array.isArray(mp.interests)?[...mp.interests]:[];
+document.querySelectorAll('#wiz-interests .interest-tag').forEach(tag=>tag.classList.toggle('selected',wizardInterests.includes(tag.dataset.interest)));
+if(mp.image){const img=document.getElementById('wizard-photo-preview'),icon=document.getElementById('wizard-photo-icon');img.src=mp.image;img.classList.remove('hidden');icon.classList.add('hidden');}
+},0);
+}
+function exportMyData(){
+const keys=['polyconnect_user','polyconnect_myprofile','polyconnect_matches','polyconnect_messages','polyconnect_likes','polyconnect_reports','polyconnect_blocked','polyconnect_events'];
+const data={exportedAt:new Date().toISOString()};
+keys.forEach(k=>{try{data[k]=JSON.parse(localStorage.getItem(k)||'null');}catch(e){data[k]=localStorage.getItem(k);}});
+const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='polyconnect-data.json';a.click();URL.revokeObjectURL(url);showToast('Data export downloaded');
+}
+function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blocked')||'[]').map(Number);}
+function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
+function recordLike(profileId){const likes=JSON.parse(localStorage.getItem('polyconnect_likes')||'[]');if(!likes.includes(profileId)){likes.push(profileId);localStorage.setItem('polyconnect_likes',JSON.stringify(likes));}}
+function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&(profile.likedMe||profile.relationshipGoal==='Study buddy'||profile.verified&&profileId%2===0));}
+function blockUser(profileId){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
+function reportUser(profileId,reason){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
+function unmatchUser(profileId,notify=true){let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
+function renderSafetyCenter(){const reportsEl=document.getElementById('reports-list'),blockedEl=document.getElementById('blocked-list');if(reportsEl){const reports=getReportedItems();reportsEl.innerHTML=reports.length?reports.map(r=>`<div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20"><p class="font-semibold text-red-600 dark:text-red-300">${r.name}</p><p>${r.reason}</p><p class="text-xs opacity-70">${r.time}</p></div>`).join(''):'No reports saved on this device.';}if(blockedEl){const blocked=getBlockedIds();blockedEl.innerHTML=blocked.length?blocked.map(id=>{const p=profiles.find(x=>x.id===id);return `<div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900"><span>${p?p.name:'User #'+id}</span><button onclick="unblockUser(${id})" class="text-purple-600 font-bold text-xs">Unblock</button></div>`}).join(''):'No blocked users.';}}
+function unblockUser(profileId){const blocked=getBlockedIds().filter(id=>id!==profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));renderCards();renderSafetyCenter();showToast('User unblocked');}
+function deleteAccountData(){if(!confirm('Delete your local profile, matches, messages, reports, and app data on this device?'))return;['polyconnect_user','polyconnect_myprofile','polyconnect_matches','polyconnect_messages','polyconnect_likes','polyconnect_reports','polyconnect_blocked'].forEach(k=>localStorage.removeItem(k));location.reload();}
 
 function showMatchModal(){
 const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
@@ -973,7 +1093,9 @@ document.getElementById('reaction-menu').classList.add('hidden');
 selectedMsgId=null;
 }
 
-function showChatMenu(){alert('Chat options: Report, Block, Clear Chat');}
+function showChatMenu(){if(!currentChatId)return;const action=prompt('Type report, block, unmatch, or clear');if(!action)return;const a=action.toLowerCase();if(a==='report'){const reason=prompt('Reason for report?')||'Safety concern';reportUser(currentChatId,reason);}else if(a==='block')blockUser(currentChatId);else if(a==='unmatch')unmatchUser(currentChatId);else if(a==='clear'){const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[currentChatId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderMessages();renderConversations();showToast('Chat cleared');}}
+
+function joinEvent(name,btn){const joined=JSON.parse(localStorage.getItem('polyconnect_events')||'[]');if(!joined.includes(name))joined.push(name);localStorage.setItem('polyconnect_events',JSON.stringify(joined));if(btn)btn.textContent='Joined';showToast('Event saved');}
 
 function formatTime(){
 const now=new Date();
