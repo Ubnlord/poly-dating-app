@@ -11,7 +11,10 @@ on:
   push:
     branches:
       - main
-      - "codex/firebase-production-foundation"
+
+concurrency:
+  group: firebase-rules-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
