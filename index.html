@@ -461,11 +461,39 @@ firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
-if(!user)return;
-try{await user.reload();}catch(error){console.warn('Could not refresh Firebase user state',error);}
+// A signed-out or unresolved session must never leave protected screens visible.
+if(!user){
+localStorage.removeItem('polyconnect_user');
+document.getElementById('profile-wizard').classList.add('hidden');
+document.getElementById('app').classList.add('hidden');
+document.getElementById('login-screen').classList.remove('hidden');
+document.getElementById('email-verification-panel').classList.add('hidden');
+document.getElementById('login-form').classList.remove('hidden');
+document.getElementById('signup-form').classList.remove('hidden');
+return;
+}
+try{await user.reload();}catch(error){
+console.warn('Could not refresh Firebase user state; keeping app locked',error);
+localStorage.removeItem('polyconnect_user');
+document.getElementById('profile-wizard').classList.add('hidden');
+document.getElementById('app').classList.add('hidden');
+document.getElementById('login-screen').classList.remove('hidden');
+showToast('Could not verify your session. Please sign in again.','error');
+return;
+}
+// Ignore stale callbacks after a sign-out or account switch.
+if(!firebaseAuth.currentUser||firebaseAuth.currentUser.uid!==user.uid)return;
 if(!user.emailVerified){localStorage.removeItem('polyconnect_user');showEmailVerification(user.email);return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email,emailVerified:true}));
-await loadFirebaseProfile(user.uid);
+try{await loadFirebaseProfile(user.uid);}catch(error){
+console.warn('Could not load Firebase profile; keeping app locked',error);
+document.getElementById('profile-wizard').classList.add('hidden');
+document.getElementById('app').classList.add('hidden');
+document.getElementById('login-screen').classList.remove('hidden');
+showToast('Could not load your profile securely. Please try again.','error');
+return;
+}
+if(!firebaseAuth.currentUser||firebaseAuth.currentUser.uid!==user.uid)return;
 const myProfile=localStorage.getItem('polyconnect_myprofile');
 if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
 else showWizard();
@@ -498,16 +526,16 @@ const defaultProfiles=[
 let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
 
 function init(){
+// Lock authenticated views before Firebase resolves the real session. localStorage is not an authority.
+document.getElementById('app').classList.add('hidden');
+document.getElementById('profile-wizard').classList.add('hidden');
+document.getElementById('login-screen').classList.remove('hidden');
 initFirebase();
 const saved=localStorage.getItem('polyconnect_profiles');
 profiles=saved?JSON.parse(saved):[...defaultProfiles];
 if(!saved)saveProfiles();
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
-const user=JSON.parse(localStorage.getItem('polyconnect_user')||'null');
-const myProfile=localStorage.getItem('polyconnect_myprofile');
-// Never restore a cached session as authenticated unless it was recorded after Firebase email verification.
-if(user&&user.uid&&user.emailVerified===true){if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
-else if(user){localStorage.removeItem('polyconnect_user');}
+localStorage.removeItem('polyconnect_user');
 setupWizardInterests();
 setupReactionMenu();
 }
