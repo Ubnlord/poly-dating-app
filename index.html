@@ -564,13 +564,6 @@ return;
 showToast('Authentication is not configured. Demo accounts are disabled for this login screen.','error');
 }
 
-function loginLocalAccount(email,pass){
-const users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
-const user=users.find(u=>u.email===email&&u.password===pass);
-if(user){localStorage.setItem('polyconnect_user',JSON.stringify(user));const mp=localStorage.getItem('polyconnect_myprofile');if(mp){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();showToast('Welcome back, '+user.name+'!');}
-else showToast('Invalid email or password','error');
-}
-
 async function sendPasswordReset(){
 const email=document.getElementById('login-email').value.trim();
 if(!email){showToast('Enter your email first','error');return;}
@@ -629,16 +622,6 @@ showToast('Check your email to verify your account');
 console.warn('Firebase signup failed',error);
 showToast(error.code==='auth/email-already-in-use'?'This email is already registered.':'Signup failed. Please try again later.','error');
 }
-}
-
-function createLocalAccount(name,email,pass){
-let users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
-if(users.find(u=>u.email===email)){showToast('Email already registered locally','error');return;}
-const user={name,email,password:pass,localOnly:true};
-users.push(user);
-localStorage.setItem('polyconnect_users',JSON.stringify(users));
-localStorage.setItem('polyconnect_user',JSON.stringify(user));
-showWizard();showToast('Local demo account created! Complete your profile.');
 }
 
 function showApp(){document.getElementById('login-screen').classList.add('hidden');document.getElementById('profile-wizard').classList.add('hidden');document.getElementById('app').classList.remove('hidden');}
