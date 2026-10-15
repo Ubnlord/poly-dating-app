@@ -65,6 +65,23 @@ jobs:
         run: npm run build:android-web
       - name: Generate native Android project
         run: npx cap add android
+      - name: Declare Android camera permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permission = '    <uses-permission android:name="android.permission.CAMERA" />\\n'
+          if "android.permission.CAMERA" not in text:
+              marker = "    <application"
+              if marker not in text:
+                  raise SystemExit("Could not locate <application> in AndroidManifest.xml")
+              text = text.replace(marker, permission + marker, 1)
+              manifest.write_text(text)
+          if "android.permission.CAMERA" not in manifest.read_text():
+              raise SystemExit("Camera permission was not added")
+          print("Android CAMERA permission declared.")
+          PY
       - name: Build Android debug APK
         run: |
           cd android
