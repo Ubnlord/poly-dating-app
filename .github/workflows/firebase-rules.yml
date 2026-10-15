@@ -45,5 +45,7 @@ jobs:
           node --input-type=commonjs -e "const a=require('/tmp/npm-audit.json'); for (const [name,v] of Object.entries(a.vulnerabilities || {})) console.log(name + ': severity=' + v.severity + ', direct=' + v.isDirect + ', fix=' + JSON.stringify(v.fixAvailable)); console.log('Totals:', JSON.stringify(a.metadata?.vulnerabilities || {}));"
       - name: Check embedded JavaScript syntax
         run: npm run test:syntax
+      - name: Build Android web assets
+        run: npm run build:android-web
       - name: Test Firestore rules in emulator
         run: npm run test:rules
