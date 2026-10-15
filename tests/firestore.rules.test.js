@@ -181,4 +181,29 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     const db = userDb("alice");
     await assertFails(updateDoc(doc(db, "profiles/alice"), { createdAt: 1 }));
   });
+
+  it("keeps account A from reading account B data after an account switch", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "profiles/alice"), profile({ name: "Account A" }));
+      await setDoc(doc(ctx.firestore(), "profiles/bob"), profile({ name: "Account B" }));
+    });
+    const accountA = userDb("alice");
+    const accountB = userDb("bob");
+    const ownA = await getDoc(doc(accountA, "profiles/alice"));
+    if (!ownA.exists() || ownA.data().name !== "Account A") throw new Error("Account A profile mismatch");
+    await assertFails(getDoc(doc(accountA, "profiles/bob")));
+    const ownB = await getDoc(doc(accountB, "profiles/bob"));
+    if (!ownB.exists() || ownB.data().name !== "Account B") throw new Error("Account B profile mismatch");
+    await assertFails(getDoc(doc(accountB, "profiles/alice")));
+  });
+
+  it("denies protected profile access after sign-out", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
+    });
+    const signedOutDb = testEnv.unauthenticatedContext().firestore();
+    await assertFails(getDoc(doc(signedOutDb, "profiles/alice")));
+    await assertFails(setDoc(doc(signedOutDb, "profiles/alice"), profile({ name: "Tampered" })));
+  });
+
 });
