@@ -462,11 +462,22 @@ if(!user.emailVerified){document.getElementById('login-screen').classList.remove
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
 try{
 await loadFirebaseProfile(user.uid);
-await loadFirebaseProfiles(user.uid);
 const myProfile=localStorage.getItem('polyconnect_myprofile');
 if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
 else showWizard();
-}catch(error){console.error('Unable to load PolyConnect data:',error);showToast('Your account signed in, but profile data could not load. Check your connection and try again.','error');}
+}catch(error){
+console.error('Unable to load the signed-in user profile:',error);
+showWizard();
+showToast('You are signed in, but your profile could not be loaded. Try completing your profile; if saving fails, contact support.','error');
+return;
+}
+try{
+await loadFirebaseProfiles(user.uid);
+if(document.getElementById('app').classList.contains('hidden')===false){renderCards();renderConversations();}
+}catch(error){
+console.error('Unable to load other public profiles:',error);
+showToast('You are signed in. Other profiles could not load right now; check your connection and try again.','error');
+}
 });
 }catch(error){console.error('Firebase initialization failed:',error);showToast('PolyConnect could not start Firebase. Reload the app; if it continues, check the browser console.','error');}
 }
