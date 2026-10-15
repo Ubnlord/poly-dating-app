@@ -45,7 +45,7 @@ service cloud.firestore {
       allow update: if signedIn()
         && request.auth.uid == uid
         && validPublicProfile(request.resource.data)
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && (!validPublicProfile(resource.data) || request.resource.data.createdAt == resource.data.createdAt);
       // Account deletion is a coordinated server-side operation; do not partially delete here.
       allow delete: if false;
     }
