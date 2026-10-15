@@ -440,13 +440,15 @@ const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!v
 
 function initFirebase(){
 if(DEMO_MODE){console.info('Local demo mode enabled. No Firebase account or data is used.');return;}
-if(!hasFirebaseConfig()){console.warn('Firebase is not configured. Real accounts are unavailable. Use ?demo=1 only for local demonstration.');return;}
-if(!window.firebase){console.error('Firebase SDK did not load. Real accounts are unavailable.');return;}
+if(!hasFirebaseConfig()){console.error('Firebase config is incomplete.');showToast('Sign-up is unavailable: Firebase configuration is incomplete.','error');return;}
+if(!window.firebase){console.error('Firebase SDK did not load. Check network access to www.gstatic.com.');showToast('Firebase could not load. Check your internet connection and reload PolyConnect.','error');return;}
 try{
-firebaseApp=firebase.initializeApp(firebaseConfig);
+if(!firebase.apps||!firebase.apps.length)firebaseApp=firebase.initializeApp(firebaseConfig);
+else firebaseApp=firebase.app();
 firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
-if(firebase.analytics)firebaseAnalytics=firebase.analytics();
+if(!firebaseAuth||!firebaseDb)throw new Error('Firebase Auth or Firestore SDK did not initialize.');
+if(firebase.analytics){try{firebaseAnalytics=firebase.analytics();}catch(analyticsError){console.warn('Firebase Analytics unavailable:',analyticsError);}}
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user){if(!DEMO_MODE){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');}return;}
 if(!user.emailVerified){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
@@ -457,9 +459,9 @@ await loadFirebaseProfiles(user.uid);
 const myProfile=localStorage.getItem('polyconnect_myprofile');
 if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
 else showWizard();
-}catch(error){console.error('Unable to load PolyConnect data:',error);showToast('Could not load your account data. Please try again.','error');}
+}catch(error){console.error('Unable to load PolyConnect data:',error);showToast('Your account signed in, but profile data could not load. Check your connection and try again.','error');}
 });
-}catch(error){console.error('Firebase initialization failed:',error);}
+}catch(error){console.error('Firebase initialization failed:',error);showToast('PolyConnect could not start Firebase. Reload the app; if it continues, check the browser console.','error');}
 }
 
 async function loadFirebaseProfile(uid){
@@ -570,7 +572,7 @@ if(!name||!email||!pass){showToast('Please fill in your name, email and password
 if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent.','error');return;}
 if(pass.length<8){showToast('Use a password with at least 8 characters.','error');return;}
 if(!firebaseReady()){
-showToast(DEMO_MODE?'Demo mode is active, but local signup could not start. Please try again.':'Sign-up could not connect to Firebase. Check your internet connection and try again.', 'error');
+showToast(DEMO_MODE?'Demo mode is active, but local signup could not start.':'Firebase is not ready. Reload the app; if this persists, check that Firebase SDK scripts are reachable.', 'error');
 return;
 }
 if(button){button.disabled=true;button.textContent='Creating account…';button.classList.add('opacity-70');}
