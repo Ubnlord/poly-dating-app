@@ -459,7 +459,7 @@ firebaseDb=firebase.firestore();
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user){if(!DEMO_MODE){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');}return;}
-if(!user.emailVerified){await firebaseAuth.signOut();document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
+if(!user.emailVerified){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
 try{
 await loadFirebaseProfile(user.uid);
@@ -476,6 +476,7 @@ async function loadFirebaseProfile(uid){
 if(!firebaseReady()||!uid)return;
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
 if(snapshot.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(snapshot.data()));
+else localStorage.removeItem('polyconnect_myprofile');
 }
 
 async function loadFirebaseProfiles(currentUid){
