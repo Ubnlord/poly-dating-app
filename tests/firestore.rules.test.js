@@ -145,6 +145,35 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await assertFails(deleteDoc(doc(db, "profiles/alice")));
   });
 
+  it("denies unverified users direct reads of public discovery profiles", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "publicProfiles/alice"), profile());
+    });
+    const db = testEnv.authenticatedContext("bob", { email_verified: false }).firestore();
+    await assertFails(getDoc(doc(db, "publicProfiles/alice")));
+  });
+
+  it("denies unverified users discovery queries", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "publicProfiles/alice"), profile());
+    });
+    const db = testEnv.authenticatedContext("bob", { email_verified: false }).firestore();
+    await assertFails(getDocs(collection(db, "publicProfiles")));
+  });
+
+  it("denies unverified users reads of their own source profile", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
+    });
+    const db = testEnv.authenticatedContext("alice", { email_verified: false }).firestore();
+    await assertFails(getDoc(doc(db, "profiles/alice")));
+  });
+
+  it("denies unverified users writes to the public profile collection", async function () {
+    const db = testEnv.authenticatedContext("alice", { email_verified: false }).firestore();
+    await assertFails(setDoc(doc(db, "publicProfiles/alice"), profile()));
+  });
+
   it("denies changing the profile creation timestamp", async function () {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
