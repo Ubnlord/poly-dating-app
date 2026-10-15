@@ -79,3 +79,10 @@ The `build:android-web` script copies the current `index.html` into `www/index.h
 7. Run full regression/security tests in staging before any production release.
 
 No production deployment or live Firebase rules change is performed by this branch.
+
+
+## Modular project structure
+
+PolyConnect is being migrated from the legacy single-file UI in `index.html` into feature modules. App Settings and Profile Settings are the first live modules under `src/features/`; discovery, chat, matching and much of navigation remain in the legacy entry while migration proceeds feature by feature.
+
+See [Architecture](docs/ARCHITECTURE.md), [Project Plan](docs/PROJECT_PLAN.md), and [Security Notes](docs/SECURITY.md). Android packaging copies `src/` and `public/` into Capacitor's generated `www/` directory.

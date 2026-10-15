@@ -205,7 +205,8 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div><h1 class="text-xl font-bold gradient-text leading-tight">PolyConnect</h1></div>
 </div>
 <div class="flex gap-2">
-<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-moon" id="dark-icon"></i></button>
+<button onclick="openAppSettings()" aria-label="App settings" title="App settings" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-gear"></i></button>
+<button onclick="toggleDarkMode()" aria-label="Toggle dark mode" title="Toggle dark mode" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-moon" id="dark-icon"></i></button>
 <button onclick="showMyProfile()" class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white shadow-md hover:scale-110 transition overflow-hidden">
 <img id="header-avatar" class="w-full h-full object-cover hidden"><i id="header-avatar-icon" class="fas fa-user"></i>
 </button>
@@ -795,7 +796,7 @@ ${mp.verified?'<span class="inline-flex items-center gap-1 px-3 py-1 rounded-ful
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Languages</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.languages||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Hobbies</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.hobbies||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold mb-2">Interests</p><div class="flex flex-wrap gap-2">${intTags}</div></div>
-<div class="grid grid-cols-2 gap-3 pt-3"><button onclick="editMyProfile()" class="py-3 rounded-xl bg-purple-600 text-white font-bold btn-press">Edit Profile</button><button onclick="exportMyData()" class="py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold btn-press">Export Data</button><button onclick="deleteAccountData()" class="col-span-2 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 font-bold btn-press">Delete Data</button></div>
+<div class="grid grid-cols-2 gap-3 pt-3"><button onclick="editMyProfile()" class="py-3 rounded-xl bg-purple-600 text-white font-bold btn-press">Edit Profile</button><button onclick="openProfileSettings()" class="py-3 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold btn-press">Profile Settings</button><button onclick="exportMyData()" class="py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold btn-press">Export Data</button><button onclick="deleteAccountData()" class="py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 font-bold btn-press">Delete Data</button></div>
 </div>`;
 }
 document.getElementById('discovery-view').classList.add('hidden');
@@ -1200,7 +1201,17 @@ if(touchEndX<touchStartX-80)passProfile();
 if(touchEndX>touchStartX+80)likeProfile();
 });
 
+/* POLYCONNECT_MODULE_BRIDGE */
+
+window.getCurrentPolyConnectProfile=()=>{try{return JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');}catch{return {};}};
+window.getPolyConnectAccountStatus=()=>{let saved={};try{saved=JSON.parse(localStorage.getItem('polyconnect_user')||'{}');}catch{}const u=firebaseAuthReady()&&firebaseAuth.currentUser?firebaseAuth.currentUser:null;return {email:(u&&u.email)||saved.email||'',emailVerified:u?Boolean(u.emailVerified):null,demoMode:DEMO_MODE};};
+window.persistPolyConnectProfile=async patch=>{const current=window.getCurrentPolyConnectProfile();const merged={...current,...patch,createdAt:current.createdAt||Date.now(),verified:false};if(!String(merged.name||'').trim()||!Number.isInteger(Number(merged.age))||Number(merged.age)<18||Number(merged.age)>100)throw new Error('Enter your name and a valid age of 18 or older.');merged.name=String(merged.name).trim();merged.age=Number(merged.age);let saved;if(DEMO_MODE)saved=merged;else{if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Firebase is not connected. Your changes were not saved.');saved=await saveFirebaseProfile(merged);}localStorage.setItem('polyconnect_myprofile',JSON.stringify(saved));updateHeaderAvatar();showMyProfile();renderCards();return saved;};
+window.signOutPolyConnect=async()=>{if(!DEMO_MODE&&firebaseAuthReady()&&firebaseAuth.currentUser)await firebaseAuth.signOut();localStorage.removeItem('polyconnect_user');localStorage.removeItem('polyconnect_myprofile');location.reload();};
+window.showPolyConnectToast=showToast;
+
 init();
 </script>
+<script type="module" src="./src/features/settings/settings.js"></script>
+<script type="module" src="./src/features/profile/profile-settings.js"></script>
 </body>
 </html>

@@ -1,0 +1,9 @@
+{
+  "name": "PolyConnect",
+  "short_name": "PolyConnect",
+  "description": "Campus connections for adults at polytechnics.",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#7c3aed",
+  "start_url": "./"
+}

@@ -9,6 +9,9 @@ on:
       - "tests/**"
       - "index.html"
       - "scripts/**"
+      - "src/**"
+      - "public/**"
+      - "docs/**"
       - "capacitor.config.json"
       - ".github/workflows/firebase-rules.yml"
   push:
@@ -61,6 +64,8 @@ jobs:
           NODE
       - name: Check embedded JavaScript syntax
         run: npm run test:syntax
+      - name: Check modular JavaScript syntax
+        run: npm run test:modules
       - name: Build Android web assets
         run: npm run build:android-web
       - name: Generate native Android project
@@ -71,7 +76,7 @@ jobs:
           from pathlib import Path
           manifest = Path("android/app/src/main/AndroidManifest.xml")
           text = manifest.read_text()
-          permission = '    <uses-permission android:name="android.permission.CAMERA" />\\n'
+          permission = '    <uses-permission android:name="android.permission.CAMERA" />\n'
           if "android.permission.CAMERA" not in text:
               marker = "    <application"
               if marker not in text:
