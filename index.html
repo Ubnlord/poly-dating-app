@@ -449,6 +449,7 @@ const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
 function initFirebase(){
+if(DEMO_MODE){console.info('Local demo mode enabled. No Firebase account or data is used.');return;}
 if(!hasFirebaseConfig()){console.warn('Firebase is not configured. Real accounts are unavailable. Use ?demo=1 only for local demonstration.');return;}
 if(!window.firebase){console.error('Firebase SDK did not load. Real accounts are unavailable.');return;}
 try{
@@ -458,7 +459,7 @@ firebaseDb=firebase.firestore();
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user){if(!DEMO_MODE){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');}return;}
-if(!user.emailVerified){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
+if(!user.emailVerified){await firebaseAuth.signOut();document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
 try{
 await loadFirebaseProfile(user.uid);
