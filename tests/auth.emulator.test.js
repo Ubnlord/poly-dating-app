@@ -33,7 +33,10 @@ describe("Isolated Firebase Auth and Firestore journey", function () {
     await assertFails(setDoc(doc(db, "profiles", a.user.uid), profile("A")));
     await applyActionCode(auth, await verificationCode(emailA)); await a.user.reload();
     if (!a.user.emailVerified) throw new Error("Verification failed for account A");
-    await setDoc(doc(db, "profiles", a.user.uid), profile("A")); await signOut(auth);
+    await signOut(auth);
+    const verifiedA = await signInWithEmailAndPassword(auth, emailA, password);
+    await verifiedA.user.getIdToken(true);
+    await setDoc(doc(db, "profiles", verifiedA.user.uid), profile("A")); await signOut(auth);
     if (auth.currentUser !== null) throw new Error("Sign-out failed for account A");
     const loginA = await signInWithEmailAndPassword(auth, emailA, password);
     const ownA = await getDoc(doc(db, "profiles", loginA.user.uid));
@@ -41,7 +44,10 @@ describe("Isolated Firebase Auth and Firestore journey", function () {
     await signOut(auth);
     const b = await createUserWithEmailAndPassword(auth, emailB, password); await sendEmailVerification(b.user);
     await applyActionCode(auth, await verificationCode(emailB)); await b.user.reload();
-    await setDoc(doc(db, "profiles", b.user.uid), profile("B")); await signOut(auth);
+    await signOut(auth);
+    const verifiedB = await signInWithEmailAndPassword(auth, emailB, password);
+    await verifiedB.user.getIdToken(true);
+    await setDoc(doc(db, "profiles", verifiedB.user.uid), profile("B")); await signOut(auth);
     const loginB = await signInWithEmailAndPassword(auth, emailB, password);
     if (loginB.user.uid !== b.user.uid) throw new Error("Account switch did not select B");
     const ownB = await getDoc(doc(db, "profiles", loginB.user.uid));
