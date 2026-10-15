@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build:android-web": "node scripts/prepare-capacitor.mjs",
+    "test:syntax": "node scripts/check-inline-script.mjs",
     "android:add": "npm run build:android-web && cap add android",
     "android:sync": "npm run build:android-web && cap sync android",
     "test:rules": "firebase emulators:exec --project demo-polyconnect --only firestore \"npm run test:rules:unit\"",
