@@ -21,7 +21,10 @@ A date-of-birth field in browser code is a self-declaration, not reliable age as
 - [ ] Firebase errors do not silently create a local account that appears production-backed.
 - [ ] Existing demo data is not migrated or deleted automatically.
 - [ ] Automated checks cover underage, invalid date, unverified login, verified login, resend verification, and Firebase unavailable.
-- [ ] Firestore rules and trusted backend enforcement are reviewed before any public launch.
+- [x] Firestore rules and direct-access regression tests are included on this branch; emulator execution and independent review must pass before merge or launch.
+
+## Firestore authorization tests
+The branch includes deny-by-default Firestore rules and an Emulator Suite test matrix. Rules require the Firebase ID token's `email_verified` claim for protected profile reads and writes. Tests cover unverified direct reads, collection queries, own-profile reads, and writes, plus owner boundaries and blocked prototype collections. These tests run in GitHub Actions and do not connect to production Firebase.
 
 ## Testing and release gates
 This PR must remain unmerged until the implementation is reviewed and tests pass. No production deployment or Firebase Console changes are part of this work. Test against a dedicated Firebase test project or Emulator Suite; do not use real user data.
