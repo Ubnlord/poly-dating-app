@@ -526,6 +526,9 @@ const defaultProfiles=[
 let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
 
 function init(){
+// Keep the browser date picker current; calculateAge independently rejects invalid/future dates.
+const dobInput=document.getElementById('signup-dob');
+if(dobInput){const today=new Date();dobInput.max=[today.getFullYear(),String(today.getMonth()+1).padStart(2,'0'),String(today.getDate()).padStart(2,'0')].join('-');}
 // Lock authenticated views before Firebase resolves the real session. localStorage is not an authority.
 document.getElementById('app').classList.add('hidden');
 document.getElementById('profile-wizard').classList.add('hidden');
