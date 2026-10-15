@@ -474,9 +474,9 @@ else showWizard();
 
 async function loadFirebaseProfile(uid){
 if(!firebaseReady()||!uid)return;
+localStorage.removeItem('polyconnect_myprofile');
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
 if(snapshot.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(snapshot.data()));
-else localStorage.removeItem('polyconnect_myprofile');
 }
 
 async function loadFirebaseProfiles(currentUid){
