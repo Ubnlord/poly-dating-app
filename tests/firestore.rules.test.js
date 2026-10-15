@@ -9,6 +9,7 @@ import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 const projectId = "demo-polyconnect";
 let testEnv;
+const userDb = (uid) => testEnv.authenticatedContext(uid, { email_verified: true }).firestore();
 
 const profile = (overrides = {}) => ({
   name: "Ada Example",
@@ -47,7 +48,7 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
   });
 
   it("allows an authenticated user to create their own valid 18+ public profile", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertSucceeds(setDoc(doc(db, "profiles/alice"), profile()));
   });
 
@@ -56,37 +57,42 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await assertFails(getDoc(doc(db, "profiles/alice")));
   });
 
+  it("denies profile access for authenticated but unverified users", async function () {
+    const db = testEnv.authenticatedContext("alice", { email_verified: false }).firestore();
+    await assertFails(setDoc(doc(db, "profiles/alice"), profile()));
+  });
+
   it("allows authenticated discovery reads of public profile documents", async function () {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
     });
-    const db = testEnv.authenticatedContext("bob").firestore();
+    const db = userDb("bob");
     await assertSucceeds(getDoc(doc(db, "profiles/alice")));
   });
 
   it("denies creating another user's profile", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/bob"), profile()));
   });
 
   it("denies underage profiles", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/alice"), profile({ age: 17 })));
   });
 
   it("denies client-claimed verification and selfie fields", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/alice"), profile({ verified: true })));
     await assertFails(setDoc(doc(db, "profiles/alice"), profile({ selfie: "data:image/jpeg;base64,abc" })));
   });
 
   it("denies data URLs for profile images", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/alice"), profile({ image: "data:image/jpeg;base64,abc" })));
   });
 
   it("denies client writes to unimplemented match and message collections", async function () {
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(setDoc(doc(db, "matches/match-1"), { participants: ["alice", "bob"] }));
     await assertFails(setDoc(doc(db, "conversations/c1/messages/m1"), { senderUid: "alice", text: "Hello" }));
   });
@@ -95,7 +101,7 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
     });
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(deleteDoc(doc(db, "profiles/alice")));
   });
 
@@ -103,7 +109,7 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
     });
-    const db = testEnv.authenticatedContext("alice").firestore();
+    const db = userDb("alice");
     await assertFails(updateDoc(doc(db, "profiles/alice"), { createdAt: 1 }));
   });
 });
