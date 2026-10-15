@@ -476,10 +476,11 @@ showToast('You are signed in. Other profiles could not load right now; check you
 }
 
 async function loadFirebaseProfile(uid){
-if(!firebaseReady()||!uid)return;
-localStorage.removeItem('polyconnect_myprofile');
+if(!firebaseReady()||!uid)return null;
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
-if(snapshot.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(snapshot.data()));
+if(snapshot.exists){const data=snapshot.data()||{};localStorage.setItem('polyconnect_myprofile',JSON.stringify(data));return data;}
+localStorage.removeItem('polyconnect_myprofile');
+return null;
 }
 
 async function loadFirebaseProfiles(currentUid){
@@ -696,6 +697,7 @@ if(!startButton.classList.contains('hidden'))startButton.disabled=false;
 
 function captureSelfie(){
 const v=document.getElementById('video-preview');
+if(!stream||!v.videoWidth||!v.videoHeight){showToast('Open the camera and wait until the live preview appears before capturing.','error');return;}
 const c=document.createElement('canvas');
 c.width=v.videoWidth;c.height=v.videoHeight;
 const ctx=c.getContext('2d');
@@ -712,21 +714,33 @@ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
 }
 
 function retakeSelfie(){
+if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
+const v=document.getElementById('video-preview');v.pause();v.srcObject=null;
+document.getElementById('captured-selfie').removeAttribute('src');
 document.getElementById('captured-selfie').classList.add('hidden');
-document.getElementById('video-preview').classList.remove('hidden');
+v.classList.remove('hidden');
 document.getElementById('btn-retake').classList.add('hidden');
 document.getElementById('btn-capture').classList.add('hidden');
-document.getElementById('btn-start-cam').classList.remove('hidden');
+const start=document.getElementById('btn-start-cam');start.classList.remove('hidden');start.disabled=false;
 document.getElementById('camera-placeholder').classList.remove('hidden');
+document.getElementById('selfie-overlay').classList.add('hidden');
 selfieDataUrl=null;
 }
 
 async function finishWizard(){
+const finishButton=document.getElementById('wizard-next');
+if(finishButton?.disabled)return;
+const name=document.getElementById('wiz-name').value.trim();
+const age=Number.parseInt(document.getElementById('wiz-age').value,10);
+if(!name||!Number.isInteger(age)||age<18||!document.getElementById('wiz-gender').value){showToast('Enter your name, valid age (18+) and gender before completing setup.','error');return;}
+if(!document.getElementById('wiz-school').value||!document.getElementById('wiz-dept').value.trim()||!document.getElementById('wiz-level').value){showToast('Complete your school, department and level first.','error');return;}
+if(!firebaseReady()&&!DEMO_MODE){showToast('Your account is signed in, but the profile database is unavailable. Check your connection and try again.','error');return;}
 const photo=document.getElementById('wizard-photo-preview').src;
-if(!firebaseReady()&&!DEMO_MODE){showToast('Connect to Firebase before creating a real profile.','error');return;}
+const previousLabel=finishButton?.innerHTML;
+if(finishButton){finishButton.disabled=true;finishButton.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Saving profile…';}
 const myProfile={
-name:document.getElementById('wiz-name').value,
-age:parseInt(document.getElementById('wiz-age').value),
+name,
+age,
 gender:document.getElementById('wiz-gender').value,
 bio:document.getElementById('wiz-bio').value,
 school:document.getElementById('wiz-school').value,
@@ -744,9 +758,10 @@ verified:false,createdAt:Date.now()
 try{
 const storedProfile=firebaseReady()?await saveFirebaseProfile(myProfile):myProfile;
 localStorage.setItem('polyconnect_myprofile',JSON.stringify(storedProfile));
-showApp();updateHeaderAvatar();renderCards();renderConversations();
+showApp();updateHeaderAvatar();renderCards();renderConversations();showMyProfile();
 showToast('Profile saved! Welcome to PolyConnect.');
-}catch(error){console.error('Profile save failed:',error);showToast('Profile could not be saved. Please try again.','error');}
+}catch(error){console.error('Profile save failed:',error);showToast(error?.message||'Profile could not be saved. Please try again.','error');}
+finally{if(finishButton){finishButton.disabled=false;finishButton.innerHTML=previousLabel||'Complete';}}
 }
 
 function updateHeaderAvatar(){
@@ -775,12 +790,13 @@ if(tab==='discovery')document.getElementById('discovery-view').classList.remove(
 else if(tab==='matches')document.getElementById('matches-view').classList.remove('hidden');
 else if(tab==='events')document.getElementById('events-view').classList.remove('hidden');
 else if(tab==='safety'){document.getElementById('safety-view').classList.remove('hidden');renderSafetyCenter();}
+else if(tab==='profile'){document.getElementById('my-profile-view').classList.remove('hidden');showMyProfile();}
 }
 
 function showMyProfile(){
-const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
+let mp={};try{mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}')||{};}catch{}
 const container=document.getElementById('my-profile-content');
-if(!mp.name){container.innerHTML='<p class="text-gray-500 text-center py-8">No profile found. Please complete setup.</p>';}
+if(!mp.name){container.innerHTML='<div class="text-center py-8 px-4"><p class="text-gray-500 mb-4">Your profile has not been completed yet.</p><button type="button" onclick="editMyProfile()" class="px-5 py-3 rounded-xl bg-purple-600 text-white font-bold">Complete my profile</button></div>';}
 else{
 const intTags=mp.interests?mp.interests.map(i=>`<span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-medium">${i}</span>`).join(''):'';
 container.innerHTML=`
