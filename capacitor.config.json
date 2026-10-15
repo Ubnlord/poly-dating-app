@@ -1,0 +1,8 @@
+{
+  "appId": "com.polyconnect.app",
+  "appName": "PolyConnect",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
