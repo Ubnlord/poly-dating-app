@@ -660,15 +660,35 @@ else wizardInterests=wizardInterests.filter(i=>i!==int);
 }
 
 async function startCamera(){
+const startButton=document.getElementById('btn-start-cam');
+if(!window.isSecureContext){showToast('Camera requires a secure app context. Update PolyConnect and try again.','error');return;}
+if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
+showToast('Camera is not available in this app build. Please install the latest PolyConnect APK.','error');return;
+}
+startButton.disabled=true;
 try{
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:960}}});
 const v=document.getElementById('video-preview');
 v.srcObject=stream;
+v.muted=true;
+await v.play();
 document.getElementById('camera-placeholder').classList.add('hidden');
 document.getElementById('selfie-overlay').classList.remove('hidden');
-document.getElementById('btn-start-cam').classList.add('hidden');
+startButton.classList.add('hidden');
 document.getElementById('btn-capture').classList.remove('hidden');
-}catch(err){showToast('Camera access denied. Please allow camera permissions.','error');}
+}catch(err){
+console.error('PolyConnect camera start failed:',err);
+if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+let message='Unable to open the camera. Check Android app permissions and try again.';
+if(err&&err.name==='NotAllowedError')message='Camera permission was denied. Allow Camera in Android Settings for PolyConnect, then try again.';
+else if(err&&err.name==='NotFoundError')message='No front camera was found on this device.';
+else if(err&&err.name==='NotReadableError')message='The camera is busy in another app. Close other camera apps and try again.';
+else if(err&&err.name==='OverconstrainedError')message='The front camera could not use the requested settings. Try again.';
+else if(err&&err.name==='SecurityError')message='Android blocked camera access for this app. Update PolyConnect and check app permissions.';
+showToast(message,'error');
+}finally{
+if(!startButton.classList.contains('hidden'))startButton.disabled=false;
+}
 }
 
 function captureSelfie(){
