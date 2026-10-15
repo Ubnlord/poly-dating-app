@@ -503,9 +503,11 @@ const saved=localStorage.getItem('polyconnect_profiles');
 profiles=saved?JSON.parse(saved):[...defaultProfiles];
 if(!saved)saveProfiles();
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
-const user=localStorage.getItem('polyconnect_user');
+const user=JSON.parse(localStorage.getItem('polyconnect_user')||'null');
 const myProfile=localStorage.getItem('polyconnect_myprofile');
-if(user){if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
+// Never restore a cached session as authenticated unless it was recorded after Firebase email verification.
+if(user&&user.uid&&user.emailVerified===true){if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
+else if(user){localStorage.removeItem('polyconnect_user');}
 setupWizardInterests();
 setupReactionMenu();
 }
