@@ -543,9 +543,9 @@ function toggleAuthMode(){document.getElementById('login-form').classList.toggle
 async function doLogin(){
 const email=document.getElementById('login-email').value.trim(),pass=document.getElementById('login-password').value;
 if(!email||!pass){showToast('Please fill in all fields','error');return;}
-if(!firebaseReady()){
+if(!firebaseAuthReady()){
 if(DEMO_MODE){loginLocalAccount(email,pass);return;}
-showToast('Real sign-in is unavailable because Firebase is not connected.','error');return;
+showToast('Firebase Authentication is unavailable. Check your connection and reload PolyConnect.','error');return;
 }
 try{
 const credential=await firebaseAuth.signInWithEmailAndPassword(email,pass);
@@ -565,7 +565,7 @@ else showToast('Invalid email or password','error');
 async function sendPasswordReset(){
 const email=document.getElementById('login-email').value.trim();
 if(!email){showToast('Enter your email first','error');return;}
-if(firebaseReady()){
+if(firebaseAuthReady()){
 firebaseAuth.sendPasswordResetEmail(email).then(()=>showToast('Password reset email sent')).catch(error=>showToast(error.message,'error'));
 return;
 }
