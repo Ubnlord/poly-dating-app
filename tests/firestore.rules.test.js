@@ -81,6 +81,17 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await assertFails(getDoc(doc(db, "profiles/legacy")));
   });
 
+  it("allows an owner to replace their invalid legacy profile with clean public data", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "profiles/alice"), profile({
+        verified: true,
+        selfie: "data:image/jpeg;base64,private"
+      }));
+    });
+    const db = userDb("alice");
+    await assertSucceeds(setDoc(doc(db, "profiles/alice"), profile({ createdAt: 1761000000000 })));
+  });
+
   it("denies creating another user's profile", async function () {
     const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/bob"), profile()));
