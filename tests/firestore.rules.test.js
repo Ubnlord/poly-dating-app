@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment
 } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
 
 const projectId = "demo-polyconnect";
 let testEnv;
@@ -62,12 +62,30 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await assertFails(setDoc(doc(db, "profiles/alice"), profile()));
   });
 
-  it("allows authenticated discovery reads of public profile documents", async function () {
+  it("allows authenticated discovery reads from the dedicated public profile collection", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "publicProfiles/alice"), profile());
+    });
+    const db = userDb("bob");
+    await assertSucceeds(getDoc(doc(db, "publicProfiles/alice")));
+  });
+
+  it("allows discovery queries over validated public profiles", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "publicProfiles/alice"), profile());
+      await setDoc(doc(ctx.firestore(), "publicProfiles/bob"), profile({ name: "Bob Example" }));
+    });
+    const db = userDb("carol");
+    const result = await getDocs(collection(db, "publicProfiles"));
+    if (result.size !== 2) throw new Error(`Expected 2 public profiles, got ${result.size}`);
+  });
+
+  it("prevents other users from reading the source profile collection", async function () {
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
       await setDoc(doc(ctx.firestore(), "profiles/alice"), profile());
     });
-    const db = userDb("bob");
-    await assertSucceeds(getDoc(doc(db, "profiles/alice")));
+    await assertFails(getDoc(doc(userDb("bob"), "profiles/alice")));
+    await assertSucceeds(getDoc(doc(userDb("alice"), "profiles/alice")));
   });
 
   it("denies reads of legacy profiles containing selfie data or claimed verification", async function () {
