@@ -49,6 +49,25 @@ The initial rule set intentionally permits authenticated reads of public profile
 
 Append `?demo=1` to the page URL to use the old local-only prototype features for demonstration. Do not use demo mode for real accounts, private conversations, or production acceptance testing. Demo accounts and demo profiles are stored in the browser and are not real users.
 
+## Android app scaffold
+
+The repository now includes a Capacitor configuration so the same web experience can be packaged for Android. The native Android project has **not** yet been generated, built, or tested on a device.
+
+Requirements: Node.js 20+, Android Studio, and a supported Android SDK/JDK setup.
+
+```bash
+npm install
+npm run android:add
+```
+
+For subsequent web changes after the Android project exists:
+
+```bash
+npm run android:sync
+```
+
+The `build:android-web` script copies the current `index.html` into `www/index.html` for Capacitor. The Android project and APK/AAB must be generated and tested separately; this repository branch does not contain a verified installable Android build. Before public distribution, add a privacy policy URL, app icon/splash assets, app signing, Android back-navigation checks, and Play Store policy review.
+
 ## Roadmap
 
 1. Complete and review auth/profile foundation and emulator tests.
