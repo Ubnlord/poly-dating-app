@@ -481,7 +481,7 @@ if(snapshot.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(s
 
 async function loadFirebaseProfiles(currentUid){
 if(!firebaseReady())return;
-const snapshot=await firebaseDb.collection('profiles').get();
+const snapshot=await firebaseDb.collection('publicProfiles').get();
 profiles=snapshot.docs.filter(item=>item.id!==currentUid).map(item=>{
 const data=item.data();
 return {...data,id:item.id,major:data.department||'',verified:false,compatibility:'',compatibilityDetails:''};
@@ -491,13 +491,19 @@ saveProfiles();
 
 async function saveFirebaseProfile(profile){
 if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Sign in to save your profile.');
-const publicProfile={...profile};
-delete publicProfile.selfie;
+const allowedFields=['name','age','gender','bio','school','department','level','state','interests','hobbies','relationshipGoal','religion','languages','image','createdAt'];
+const publicProfile={};
+for(const key of allowedFields){if(profile[key]!==undefined)publicProfile[key]=profile[key];}
 publicProfile.verified=false;
 if(typeof publicProfile.image!=='string'||!publicProfile.image.startsWith('https://')){
 publicProfile.image='https://ui-avatars.com/api/?name='+encodeURIComponent(publicProfile.name||'PolyConnect User')+'&background=8b5cf6&color=fff&size=400';
 }
-await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(publicProfile);
+if(!Number.isInteger(publicProfile.createdAt))publicProfile.createdAt=Date.now();
+const uid=firebaseAuth.currentUser.uid;
+const batch=firebaseDb.batch();
+batch.set(firebaseDb.collection('profiles').doc(uid),publicProfile);
+batch.set(firebaseDb.collection('publicProfiles').doc(uid),publicProfile);
+await batch.commit();
 return publicProfile;
 }
 
