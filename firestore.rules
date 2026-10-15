@@ -39,14 +39,28 @@ service cloud.firestore {
     }
 
     match /profiles/{uid} {
-      // Profile documents must contain only public profile fields.
-      allow read: if signedIn() && validPublicProfile(resource.data);
+      // The owner can read their own profile, including legacy data that only they may repair.
+      // Discovery reads use the separate publicProfiles collection.
+      allow read: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
       allow update: if signedIn()
         && request.auth.uid == uid
         && validPublicProfile(request.resource.data)
         && (!validPublicProfile(resource.data) || request.resource.data.createdAt == resource.data.createdAt);
       // Account deletion is a coordinated server-side operation; do not partially delete here.
+      allow delete: if false;
+    }
+
+
+    match /publicProfiles/{uid} {
+      // This collection is populated only by validated profile writes. Keeping it separate
+      // prevents discovery queries from exposing legacy/private fields in /profiles.
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if false;
     }
 
