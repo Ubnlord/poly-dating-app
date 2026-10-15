@@ -1,0 +1,102 @@
+name: Firebase rules tests
+
+on:
+  pull_request:
+    paths:
+      - "firestore.rules"
+      - "firebase.json"
+      - "package.json"
+      - "tests/**"
+      - "index.html"
+      - "scripts/**"
+      - "src/**"
+      - "public/**"
+      - "docs/**"
+      - "capacitor.config.json"
+      - ".github/workflows/firebase-rules.yml"
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: firebase-rules-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Set up Java for Firebase Emulator and Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Summarize dependency advisories
+        run: |
+          npm audit --json > /tmp/npm-audit.json || true
+          node --input-type=commonjs <<'NODE'
+          const audit = require('/tmp/npm-audit.json');
+          for (const [name, v] of Object.entries(audit.vulnerabilities || {})) {
+            console.log(JSON.stringify({
+              package: name,
+              severity: v.severity,
+              direct: v.isDirect,
+              range: v.range,
+              via: (v.via || []).map(item => typeof item === 'string'
+                ? item
+                : {name: item.name, title: item.title, range: item.range, url: item.url}),
+              fixAvailable: v.fixAvailable,
+              dependencyPaths: v.nodes
+            }));
+          }
+          console.log('Totals:', JSON.stringify(audit.metadata?.vulnerabilities || {}));
+          NODE
+      - name: Check embedded JavaScript syntax
+        run: npm run test:syntax
+      - name: Check modular JavaScript syntax
+        run: npm run test:modules
+      - name: Build Android web assets
+        run: npm run build:android-web
+      - name: Generate native Android project
+        run: npx cap add android
+      - name: Declare Android camera permission
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permission = '    <uses-permission android:name="android.permission.CAMERA" />\n'
+          if "android.permission.CAMERA" not in text:
+              marker = "    <application"
+              if marker not in text:
+                  raise SystemExit("Could not locate <application> in AndroidManifest.xml")
+              text = text.replace(marker, permission + marker, 1)
+              manifest.write_text(text)
+          if "android.permission.CAMERA" not in manifest.read_text():
+              raise SystemExit("Camera permission was not added")
+          print("Android CAMERA permission declared.")
+          PY
+      - name: Build Android debug APK
+        run: |
+          cd android
+          ./gradlew --no-daemon assembleDebug
+      - name: Upload Android debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: polyconnect-android-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Test Firestore rules in emulator
+        run: npm run test:rules

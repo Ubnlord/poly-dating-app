@@ -44,6 +44,8 @@ body{overscroll-behavior-y:none}
 .dark input,.dark textarea,.dark select{background-color:#252542;color:#f1f5f9;border-color:#334155}
 .dark .shadow-sm{box-shadow:0 1px 2px 0 rgba(0,0,0,0.3)}
 .dark .card-shadow{box-shadow:0 25px 50px -12px rgba(0,0,0,0.5)}
+html.larger-text{font-size:112.5%}
+html.reduce-motion *,html.reduce-motion *::before,html.reduce-motion *::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:0.01ms!important}
 input:focus,textarea:focus,select:focus{outline:none}
 .interest-tag{transition:all 0.2s;cursor:pointer}
 .interest-tag.selected{background:linear-gradient(135deg,#8b5cf6,#ec4899);color:white;border-color:transparent}
@@ -72,15 +74,6 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/20 backdrop-blur-lg flex items-center justify-center text-white text-3xl shadow-xl"><i class="fas fa-graduation-cap"></i></div>
 <h1 class="text-4xl font-bold text-white mb-2">PolyConnect</h1>
 <p class="text-white/80 text-sm">Verified Dating for Polytechnic Students</p>
-<div class="mt-4 rounded-2xl bg-white/15 border border-white/20 p-4 text-left text-white shadow-lg">
-<p class="text-xs font-bold uppercase tracking-wider text-pink-100 mb-2">Latest free upgrades live</p>
-<ul class="space-y-1.5 text-sm text-white/90">
-<li><i class="fas fa-shield-heart mr-2 text-pink-200"></i>Safety Center, report, block, unmatch</li>
-<li><i class="fas fa-sliders mr-2 text-pink-200"></i>Age, gender, state, goal and verified filters</li>
-<li><i class="fas fa-download mr-2 text-pink-200"></i>Profile edit, local data export and delete</li>
-</ul>
-<p class="mt-3 text-[11px] text-white/60">Build: free-upgrades-v3</p>
-</div>
 </div>
 <div id="login-form" class="bg-white/10 backdrop-blur-lg rounded-3xl p-6 border border-white/20">
 <h2 class="text-xl font-bold text-white mb-5 text-center">Welcome Back</h2>
@@ -96,9 +89,8 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div class="space-y-4">
 <div><input type="text" id="signup-name" placeholder="Full Name" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div><input type="email" id="signup-email" placeholder="student@poly.edu" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
-<div><input type="password" id="signup-password" placeholder="Min 6 characters" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
+<div><input type="password" id="signup-password" placeholder="At least 8 characters" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div class="flex items-start gap-2 text-white/80 text-xs"><input id="signup-consent" type="checkbox" class="mt-0.5 accent-purple-600"><label for="signup-consent">I am 18+ and agree to the safety rules, respectful conduct, and data storage needed to run my account.</label></div>
-<p class="text-white/50 text-[11px] -mt-2">If Firebase is unavailable, signup will automatically continue in free local demo mode.</p>
 <button onclick="doSignup()" class="w-full py-3.5 rounded-xl bg-white text-purple-700 font-bold shadow-lg btn-press transition hover:bg-gray-100">Sign Up</button>
 <p class="text-center text-white/70 text-sm">Have an account? <button onclick="toggleAuthMode()" class="text-white font-semibold underline">Log In</button></p>
 </div>
@@ -212,10 +204,11 @@ input:focus,textarea:focus,select:focus{outline:none}
 <header class="fixed top-0 w-full z-50 glass px-4 py-3 flex justify-between items-center">
 <div class="flex items-center gap-2">
 <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg"><i class="fas fa-graduation-cap"></i></div>
-<div><h1 class="text-xl font-bold gradient-text leading-tight">PolyConnect</h1><p class="text-[10px] text-gray-500 dark:text-gray-400 -mt-0.5">free-upgrades-v3</p></div>
+<div><h1 class="text-xl font-bold gradient-text leading-tight">PolyConnect</h1></div>
 </div>
 <div class="flex gap-2">
-<button onclick="toggleDarkMode()" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-moon" id="dark-icon"></i></button>
+<button onclick="openAppSettings()" aria-label="App settings" title="App settings" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-gear"></i></button>
+<button onclick="toggleDarkMode()" aria-label="Toggle dark mode" title="Toggle dark mode" class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:scale-110 transition shadow-sm"><i class="fas fa-moon" id="dark-icon"></i></button>
 <button onclick="showMyProfile()" class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white shadow-md hover:scale-110 transition overflow-hidden">
 <img id="header-avatar" class="w-full h-full object-cover hidden"><i id="header-avatar-icon" class="fas fa-user"></i>
 </button>
@@ -225,16 +218,6 @@ input:focus,textarea:focus,select:focus{outline:none}
 <main class="pt-20 pb-24 h-full overflow-y-auto hide-scrollbar" id="main-content">
 <!-- DISCOVERY -->
 <div id="discovery-view" class="px-4 max-w-md mx-auto fade-in">
-<section class="mb-4 rounded-3xl bg-gradient-to-r from-purple-600 to-pink-500 p-4 text-white shadow-lg">
-<div class="flex items-start gap-3">
-<div class="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center flex-shrink-0"><i class="fas fa-bolt"></i></div>
-<div>
-<p class="text-xs font-bold uppercase tracking-wider text-white/70">New in this build</p>
-<h2 class="text-lg font-bold">Free safety and discovery upgrades are live</h2>
-<p class="text-sm text-white/80 mt-1">Use Prefs for age/gender/state filters, tap the flag on cards to report/block, or open Safety for blocked users and reports.</p>
-</div>
-</div>
-</section>
 <section class="mb-5 rounded-3xl bg-white dark:bg-gray-800 p-4 shadow-sm border border-gray-100 dark:border-gray-700">
 <div class="flex items-center justify-between gap-3 mb-3">
 <div>
@@ -427,7 +410,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 
 <!-- Toast -->
-<div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[90] bg-gray-800 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+<div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[110] bg-gray-800 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
 <i class="fas fa-check-circle text-green-400 dark:text-green-600"></i><span id="toast-msg">Success!</span>
 </div>
 </div>
@@ -444,35 +427,88 @@ measurementId:"G-TD810WXVH8"
 };
 
 let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseAnalytics=null;
-const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
+const DEMO_MODE=new URLSearchParams(window.location.search).get('demo')==='1';
+const firebaseAuthReady=()=>Boolean(firebaseApp&&firebaseAuth);
+const firebaseReady=()=>Boolean(firebaseAuthReady()&&firebaseDb);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
 function initFirebase(){
-if(!hasFirebaseConfig()){console.info('Firebase is not configured yet. Using localStorage fallback.');return;}
-if(!window.firebase){console.warn('Firebase SDK did not load. Using localStorage fallback.');return;}
-firebaseApp=firebase.initializeApp(firebaseConfig);
+if(DEMO_MODE){console.info('Local demo mode enabled. No Firebase account or data is used.');return;}
+if(!hasFirebaseConfig()){console.error('Firebase config is incomplete.');showToast('Sign-up is unavailable: Firebase configuration is incomplete.','error');return;}
+if(!window.firebase){console.error('Firebase SDK did not load. Check network access to www.gstatic.com.');showToast('Firebase could not load. Check your internet connection and reload PolyConnect.','error');return;}
+try{
+if(!firebase.apps||!firebase.apps.length)firebaseApp=firebase.initializeApp(firebaseConfig);
+else firebaseApp=firebase.app();
 firebaseAuth=firebase.auth();
-firebaseDb=firebase.firestore();
-if(firebase.analytics)firebaseAnalytics=firebase.analytics();
+if(!firebaseAuth)throw new Error('Firebase Authentication SDK did not initialize.');
+try{
+firebaseDb=typeof firebase.firestore==='function'?firebase.firestore():null;
+if(!firebaseDb)console.warn('Firestore SDK is unavailable; account authentication can still work.');
+}catch(firestoreError){
+firebaseDb=null;
+console.error('Firestore initialization failed; account authentication can still work:',firestoreError);
+}
+if(firebase.analytics){try{firebaseAnalytics=firebase.analytics();}catch(analyticsError){console.warn('Firebase Analytics unavailable:',analyticsError);}}
 firebaseAuth.onAuthStateChanged(async user=>{
-if(!user)return;
+if(!user){if(!DEMO_MODE){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');}return;}
+if(!user.emailVerified){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
+try{
 await loadFirebaseProfile(user.uid);
 const myProfile=localStorage.getItem('polyconnect_myprofile');
 if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
 else showWizard();
+}catch(error){
+console.error('Unable to load the signed-in user profile:',error);
+showWizard();
+showToast('You are signed in, but your profile could not be loaded. Try completing your profile; if saving fails, contact support.','error');
+return;
+}
+try{
+await loadFirebaseProfiles(user.uid);
+if(document.getElementById('app').classList.contains('hidden')===false){renderCards();renderConversations();}
+}catch(error){
+console.error('Unable to load other public profiles:',error);
+showToast('You are signed in. Other profiles could not load right now; check your connection and try again.','error');
+}
 });
+}catch(error){console.error('Firebase initialization failed:',error);showToast('PolyConnect could not start Firebase. Reload the app; if it continues, check the browser console.','error');}
 }
 
 async function loadFirebaseProfile(uid){
-if(!firebaseReady()||!uid)return;
-const doc=await firebaseDb.collection('profiles').doc(uid).get();
-if(doc.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(doc.data()));
+if(!firebaseReady()||!uid)return null;
+const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
+if(snapshot.exists){const data=snapshot.data()||{};localStorage.setItem('polyconnect_myprofile',JSON.stringify(data));return data;}
+localStorage.removeItem('polyconnect_myprofile');
+return null;
+}
+
+async function loadFirebaseProfiles(currentUid){
+if(!firebaseReady())return;
+const snapshot=await firebaseDb.collection('publicProfiles').get();
+profiles=snapshot.docs.filter(item=>item.id!==currentUid).map(item=>{
+const data=item.data();
+return {...data,id:item.id,major:data.department||'',verified:false,compatibility:'',compatibilityDetails:''};
+});
+saveProfiles();
 }
 
 async function saveFirebaseProfile(profile){
-if(!firebaseReady()||!firebaseAuth.currentUser)return;
-await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(profile,{merge:true});
+if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Sign in to save your profile.');
+const allowedFields=['name','age','gender','bio','school','department','level','state','interests','hobbies','relationshipGoal','religion','languages','image','createdAt'];
+const publicProfile={};
+for(const key of allowedFields){if(profile[key]!==undefined)publicProfile[key]=profile[key];}
+publicProfile.verified=false;
+if(typeof publicProfile.image!=='string'||!publicProfile.image.startsWith('https://')){
+publicProfile.image='https://ui-avatars.com/api/?name='+encodeURIComponent(publicProfile.name||'PolyConnect User')+'&background=8b5cf6&color=fff&size=400';
+}
+if(!Number.isInteger(publicProfile.createdAt))publicProfile.createdAt=Date.now();
+const uid=firebaseAuth.currentUser.uid;
+const batch=firebaseDb.batch();
+batch.set(firebaseDb.collection('profiles').doc(uid),publicProfile);
+batch.set(firebaseDb.collection('publicProfiles').doc(uid),publicProfile);
+await batch.commit();
+return publicProfile;
 }
 
 async function saveFirebaseMatch(profile){
@@ -491,13 +527,17 @@ let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInt
 
 function init(){
 initFirebase();
+if(DEMO_MODE){
 const saved=localStorage.getItem('polyconnect_profiles');
 profiles=saved?JSON.parse(saved):[...defaultProfiles];
 if(!saved)saveProfiles();
+}else{profiles=[];}
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
+if(DEMO_MODE){
 const user=localStorage.getItem('polyconnect_user');
 const myProfile=localStorage.getItem('polyconnect_myprofile');
 if(user){if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
+}
 setupWizardInterests();
 setupReactionMenu();
 }
@@ -506,20 +546,18 @@ function saveProfiles(){localStorage.setItem('polyconnect_profiles',JSON.stringi
 function toggleAuthMode(){document.getElementById('login-form').classList.toggle('hidden');document.getElementById('signup-form').classList.toggle('hidden');}
 
 async function doLogin(){
-const email=document.getElementById('login-email').value,pass=document.getElementById('login-password').value;
+const email=document.getElementById('login-email').value.trim(),pass=document.getElementById('login-password').value;
 if(!email||!pass){showToast('Please fill in all fields','error');return;}
-if(firebaseReady()){
+if(!firebaseAuthReady()){
+if(DEMO_MODE){loginLocalAccount(email,pass);return;}
+showToast('Firebase Authentication is unavailable. Check your connection and reload PolyConnect.','error');return;
+}
 try{
 const credential=await firebaseAuth.signInWithEmailAndPassword(email,pass);
-const user=credential.user;
-localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
+if(!credential.user.emailVerified){await firebaseAuth.signOut();showToast('Please verify your email using the link we sent before signing in.','error');return;}
+localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name:credential.user.displayName||'',email:credential.user.email}));
 showToast('Welcome back!');
-return;
-}catch(error){
-console.warn('Firebase login failed, checking local demo accounts:',error);
-}
-}
-loginLocalAccount(email,pass);
+}catch(error){showToast(error.code==='auth/invalid-credential'?'Email or password is incorrect.':error.message,'error');}
 }
 
 function loginLocalAccount(email,pass){
@@ -532,7 +570,7 @@ else showToast('Invalid email or password','error');
 async function sendPasswordReset(){
 const email=document.getElementById('login-email').value.trim();
 if(!email){showToast('Enter your email first','error');return;}
-if(firebaseReady()){
+if(firebaseAuthReady()){
 firebaseAuth.sendPasswordResetEmail(email).then(()=>showToast('Password reset email sent')).catch(error=>showToast(error.message,'error'));
 return;
 }
@@ -541,22 +579,37 @@ showToast('Local demo accounts cannot send reset email','error');
 
 async function doSignup(){
 const name=document.getElementById('signup-name').value.trim(),email=document.getElementById('signup-email').value.trim(),pass=document.getElementById('signup-password').value;
-if(!name||!email||!pass){showToast('Please fill in all fields','error');return;}
-if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent','error');return;}
-if(pass.length<6){showToast('Password must be at least 6 characters','error');return;}
-if(firebaseReady()){
+const button=document.querySelector('#signup-form button[onclick="doSignup()"]');
+if(!name||!email||!pass){showToast('Please fill in your name, email and password.','error');return;}
+if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent.','error');return;}
+if(pass.length<8){showToast('Use a password with at least 8 characters.','error');return;}
+if(!firebaseAuthReady()){
+showToast(DEMO_MODE?'Demo mode is active, but local signup could not start.':'Firebase Authentication is not ready. Check the connection and reload the app.', 'error');
+return;
+}
+if(button){button.disabled=true;button.textContent='Creating account…';button.classList.add('opacity-70');}
 try{
 const credential=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
 await credential.user.updateProfile({displayName:name});
-localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name,email}));
-showWizard();showToast('Account created! Complete your profile.');
-return;
+await credential.user.sendEmailVerification();
+await firebaseAuth.signOut();
+document.getElementById('login-email').value=email;
+toggleAuthMode();
+showToast('Account created. Check your email to verify it, then log in.');
 }catch(error){
-console.warn('Firebase signup failed, falling back to local demo account:',error);
-showToast('Firebase signup unavailable. Using local demo mode.','error');
+console.error('PolyConnect sign-up failed:',error);
+const messages={
+'auth/email-already-in-use':'This email already has an account. Please log in instead.',
+'auth/invalid-email':'Enter a valid email address.',
+'auth/weak-password':'Choose a stronger password with at least 8 characters.',
+'auth/network-request-failed':'Network error. Check your internet connection and try again.',
+'auth/operation-not-allowed':'Email/password sign-up is disabled in Firebase Authentication. Contact the app administrator.',
+'auth/too-many-requests':'Too many attempts. Wait a little and try again.'
+};
+showToast(messages[error.code]||('Sign-up failed: '+(error.message||'Please try again.')),'error');
+}finally{
+if(button){button.disabled=false;button.textContent='Sign Up';button.classList.remove('opacity-70');}
 }
-}
-createLocalAccount(name,email,pass);
 }
 
 function createLocalAccount(name,email,pass){
@@ -611,19 +664,40 @@ else wizardInterests=wizardInterests.filter(i=>i!==int);
 }
 
 async function startCamera(){
+const startButton=document.getElementById('btn-start-cam');
+if(!window.isSecureContext){showToast('Camera requires a secure app context. Update PolyConnect and try again.','error');return;}
+if(!navigator.mediaDevices||typeof navigator.mediaDevices.getUserMedia!=='function'){
+showToast('Camera is not available in this app build. Please install the latest PolyConnect APK.','error');return;
+}
+startButton.disabled=true;
 try{
-stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'user'},width:{ideal:720},height:{ideal:960}}});
 const v=document.getElementById('video-preview');
 v.srcObject=stream;
+v.muted=true;
+await v.play();
 document.getElementById('camera-placeholder').classList.add('hidden');
 document.getElementById('selfie-overlay').classList.remove('hidden');
-document.getElementById('btn-start-cam').classList.add('hidden');
+startButton.classList.add('hidden');
 document.getElementById('btn-capture').classList.remove('hidden');
-}catch(err){showToast('Camera access denied. Please allow camera permissions.','error');}
+}catch(err){
+console.error('PolyConnect camera start failed:',err);
+if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+let message='Unable to open the camera. Check Android app permissions and try again.';
+if(err&&err.name==='NotAllowedError')message='Camera permission was denied. Allow Camera in Android Settings for PolyConnect, then try again.';
+else if(err&&err.name==='NotFoundError')message='No front camera was found on this device.';
+else if(err&&err.name==='NotReadableError')message='The camera is busy in another app. Close other camera apps and try again.';
+else if(err&&err.name==='OverconstrainedError')message='The front camera could not use the requested settings. Try again.';
+else if(err&&err.name==='SecurityError')message='Android blocked camera access for this app. Update PolyConnect and check app permissions.';
+showToast(message,'error');
+}finally{
+if(!startButton.classList.contains('hidden'))startButton.disabled=false;
+}
 }
 
 function captureSelfie(){
 const v=document.getElementById('video-preview');
+if(!stream||!v.videoWidth||!v.videoHeight){showToast('Open the camera and wait until the live preview appears before capturing.','error');return;}
 const c=document.createElement('canvas');
 c.width=v.videoWidth;c.height=v.videoHeight;
 const ctx=c.getContext('2d');
@@ -640,20 +714,33 @@ if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
 }
 
 function retakeSelfie(){
+if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
+const v=document.getElementById('video-preview');v.pause();v.srcObject=null;
+document.getElementById('captured-selfie').removeAttribute('src');
 document.getElementById('captured-selfie').classList.add('hidden');
-document.getElementById('video-preview').classList.remove('hidden');
+v.classList.remove('hidden');
 document.getElementById('btn-retake').classList.add('hidden');
 document.getElementById('btn-capture').classList.add('hidden');
-document.getElementById('btn-start-cam').classList.remove('hidden');
+const start=document.getElementById('btn-start-cam');start.classList.remove('hidden');start.disabled=false;
 document.getElementById('camera-placeholder').classList.remove('hidden');
+document.getElementById('selfie-overlay').classList.add('hidden');
 selfieDataUrl=null;
 }
 
-function finishWizard(){
+async function finishWizard(){
+const finishButton=document.getElementById('wizard-next');
+if(finishButton?.disabled)return;
+const name=document.getElementById('wiz-name').value.trim();
+const age=Number.parseInt(document.getElementById('wiz-age').value,10);
+if(!name||!Number.isInteger(age)||age<18||!document.getElementById('wiz-gender').value){showToast('Enter your name, valid age (18+) and gender before completing setup.','error');return;}
+if(!document.getElementById('wiz-school').value||!document.getElementById('wiz-dept').value.trim()||!document.getElementById('wiz-level').value){showToast('Complete your school, department and level first.','error');return;}
+if(!firebaseReady()&&!DEMO_MODE){showToast('Your account is signed in, but the profile database is unavailable. Check your connection and try again.','error');return;}
 const photo=document.getElementById('wizard-photo-preview').src;
+const previousLabel=finishButton?.innerHTML;
+if(finishButton){finishButton.disabled=true;finishButton.innerHTML='<i class="fas fa-spinner fa-spin mr-2"></i>Saving profile…';}
 const myProfile={
-name:document.getElementById('wiz-name').value,
-age:parseInt(document.getElementById('wiz-age').value),
+name,
+age,
 gender:document.getElementById('wiz-gender').value,
 bio:document.getElementById('wiz-bio').value,
 school:document.getElementById('wiz-school').value,
@@ -666,12 +753,15 @@ relationshipGoal:document.getElementById('wiz-goal').value,
 religion:document.getElementById('wiz-religion').value,
 languages:document.getElementById('wiz-languages').value,
 image:photo&&!photo.includes(window.location.href)?photo:'https://ui-avatars.com/api/?name='+encodeURIComponent(document.getElementById('wiz-name').value)+'&background=8b5cf6&color=fff&size=400',
-selfie:selfieDataUrl,verified:!!selfieDataUrl,createdAt:Date.now()
+verified:false,createdAt:Date.now()
 };
-localStorage.setItem('polyconnect_myprofile',JSON.stringify(myProfile));
-saveFirebaseProfile(myProfile).catch(error=>showToast(error.message,'error'));
-showApp();updateHeaderAvatar();renderCards();renderConversations();
-showToast('Profile created! Welcome to PolyConnect.');
+try{
+const storedProfile=firebaseReady()?await saveFirebaseProfile(myProfile):myProfile;
+localStorage.setItem('polyconnect_myprofile',JSON.stringify(storedProfile));
+showApp();updateHeaderAvatar();renderCards();renderConversations();showMyProfile();
+showToast('Profile saved! Welcome to PolyConnect.');
+}catch(error){console.error('Profile save failed:',error);showToast(error?.message||'Profile could not be saved. Please try again.','error');}
+finally{if(finishButton){finishButton.disabled=false;finishButton.innerHTML=previousLabel||'Complete';}}
 }
 
 function updateHeaderAvatar(){
@@ -700,12 +790,13 @@ if(tab==='discovery')document.getElementById('discovery-view').classList.remove(
 else if(tab==='matches')document.getElementById('matches-view').classList.remove('hidden');
 else if(tab==='events')document.getElementById('events-view').classList.remove('hidden');
 else if(tab==='safety'){document.getElementById('safety-view').classList.remove('hidden');renderSafetyCenter();}
+else if(tab==='profile'){document.getElementById('my-profile-view').classList.remove('hidden');showMyProfile();}
 }
 
 function showMyProfile(){
-const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
+let mp={};try{mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}')||{};}catch{}
 const container=document.getElementById('my-profile-content');
-if(!mp.name){container.innerHTML='<p class="text-gray-500 text-center py-8">No profile found. Please complete setup.</p>';}
+if(!mp.name){container.innerHTML='<div class="text-center py-8 px-4"><p class="text-gray-500 mb-4">Your profile has not been completed yet.</p><button type="button" onclick="editMyProfile()" class="px-5 py-3 rounded-xl bg-purple-600 text-white font-bold">Complete my profile</button></div>';}
 else{
 const intTags=mp.interests?mp.interests.map(i=>`<span class="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 text-xs font-medium">${i}</span>`).join(''):'';
 container.innerHTML=`
@@ -723,7 +814,7 @@ ${mp.verified?'<span class="inline-flex items-center gap-1 px-3 py-1 rounded-ful
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Languages</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.languages||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold">Hobbies</p><p class="text-sm text-gray-700 dark:text-gray-300">${mp.hobbies||''}</p></div>
 <div><p class="text-xs text-gray-400 uppercase font-semibold mb-2">Interests</p><div class="flex flex-wrap gap-2">${intTags}</div></div>
-<div class="grid grid-cols-2 gap-3 pt-3"><button onclick="editMyProfile()" class="py-3 rounded-xl bg-purple-600 text-white font-bold btn-press">Edit Profile</button><button onclick="exportMyData()" class="py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold btn-press">Export Data</button><button onclick="deleteAccountData()" class="col-span-2 py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 font-bold btn-press">Delete Data</button></div>
+<div class="grid grid-cols-2 gap-3 pt-3"><button onclick="editMyProfile()" class="py-3 rounded-xl bg-purple-600 text-white font-bold btn-press">Edit Profile</button><button onclick="openProfileSettings()" class="py-3 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-bold btn-press">Profile Settings</button><button onclick="exportMyData()" class="py-3 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-bold btn-press">Export Data</button><button onclick="deleteAccountData()" class="py-3 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-300 font-bold btn-press">Delete Data</button></div>
 </div>`;
 }
 document.getElementById('discovery-view').classList.add('hidden');
@@ -829,6 +920,7 @@ renderCards();
 function getVisibleCard(){return document.querySelector('.profile-card:not(.hidden):not(.swipe-left):not(.swipe-right)');}
 
 function likeProfile(){
+if(!DEMO_MODE){showToast('Real matching is not enabled yet. Your like was not sent.','error');return;}
 const card=getVisibleCard();if(!card)return;
 swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.classList.add('swipe-right');
@@ -847,6 +939,7 @@ setTimeout(()=>nextCard(),350);
 }
 
 function superLike(){
+if(!DEMO_MODE){showToast('Real matching is not enabled yet. Your super-like was not sent.','error');return;}
 const card=getVisibleCard();if(!card)return;
 swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.style.transform='scale(1.1)';card.style.opacity='0';
@@ -901,12 +994,16 @@ function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blo
 function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
 function recordLike(profileId){const likes=JSON.parse(localStorage.getItem('polyconnect_likes')||'[]');if(!likes.includes(profileId)){likes.push(profileId);localStorage.setItem('polyconnect_likes',JSON.stringify(likes));}}
 function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&(profile.likedMe||profile.relationshipGoal==='Study buddy'||profile.verified&&profileId%2===0));}
-function blockUser(profileId){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
-function reportUser(profileId,reason){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
-function unmatchUser(profileId,notify=true){let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
+function blockUser(profileId){if(!DEMO_MODE){showToast('Server-enforced blocking is not available yet. No block was recorded.','error');return;}const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
+function reportUser(profileId,reason){if(!DEMO_MODE){showToast('Server-backed reporting is not available yet. No report was submitted.','error');return;}const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
+function unmatchUser(profileId,notify=true){if(!DEMO_MODE){showToast('Server-side unmatching is not available yet. No changes were made.','error');return;}let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
 function renderSafetyCenter(){const reportsEl=document.getElementById('reports-list'),blockedEl=document.getElementById('blocked-list');if(reportsEl){const reports=getReportedItems();reportsEl.innerHTML=reports.length?reports.map(r=>`<div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20"><p class="font-semibold text-red-600 dark:text-red-300">${r.name}</p><p>${r.reason}</p><p class="text-xs opacity-70">${r.time}</p></div>`).join(''):'No reports saved on this device.';}if(blockedEl){const blocked=getBlockedIds();blockedEl.innerHTML=blocked.length?blocked.map(id=>{const p=profiles.find(x=>x.id===id);return `<div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900"><span>${p?p.name:'User #'+id}</span><button onclick="unblockUser(${id})" class="text-purple-600 font-bold text-xs">Unblock</button></div>`}).join(''):'No blocked users.';}}
 function unblockUser(profileId){const blocked=getBlockedIds().filter(id=>id!==profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));renderCards();renderSafetyCenter();showToast('User unblocked');}
-function deleteAccountData(){if(!confirm('Delete your local profile, matches, messages, reports, and app data on this device?'))return;['polyconnect_user','polyconnect_myprofile','polyconnect_matches','polyconnect_messages','polyconnect_likes','polyconnect_reports','polyconnect_blocked'].forEach(k=>localStorage.removeItem(k));location.reload();}
+function deleteAccountData(){
+if(!DEMO_MODE){showToast('Server-side account deletion is not implemented yet. Your account was not deleted.','error');return;}
+if(!confirm('Delete your local demo profile, matches, messages, reports, and app data on this device?'))return;
+['polyconnect_user','polyconnect_myprofile','polyconnect_matches','polyconnect_messages','polyconnect_likes','polyconnect_reports','polyconnect_blocked'].forEach(k=>localStorage.removeItem(k));location.reload();
+}
 
 function showMatchModal(){
 const mp=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
@@ -966,6 +1063,7 @@ if(badge){if(totalUnread>0){badge.textContent=totalUnread;badge.classList.remove
 }
 
 function openChat(profileId){
+if(!DEMO_MODE){showToast('Live messaging is not enabled yet. No message was sent.','error');return;}
 currentChatId=profileId;
 const profile=profiles.find(p=>p.id===profileId);
 if(!profile)return;
@@ -1009,6 +1107,7 @@ area.scrollTop=area.scrollHeight;
 }
 
 function sendMessage(){
+if(!DEMO_MODE){showToast('Live messaging is not enabled yet. No message was sent.','error');return;}
 const input=document.getElementById('chat-input');
 const text=input.value.trim();
 if(!text||!currentChatId)return;
@@ -1120,7 +1219,17 @@ if(touchEndX<touchStartX-80)passProfile();
 if(touchEndX>touchStartX+80)likeProfile();
 });
 
+/* POLYCONNECT_MODULE_BRIDGE */
+
+window.getCurrentPolyConnectProfile=()=>{try{return JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');}catch{return {};}};
+window.getPolyConnectAccountStatus=()=>{let saved={};try{saved=JSON.parse(localStorage.getItem('polyconnect_user')||'{}');}catch{}const u=firebaseAuthReady()&&firebaseAuth.currentUser?firebaseAuth.currentUser:null;return {email:(u&&u.email)||saved.email||'',emailVerified:u?Boolean(u.emailVerified):null,demoMode:DEMO_MODE};};
+window.persistPolyConnectProfile=async patch=>{const current=window.getCurrentPolyConnectProfile();const merged={...current,...patch,createdAt:current.createdAt||Date.now(),verified:false};if(!String(merged.name||'').trim()||!Number.isInteger(Number(merged.age))||Number(merged.age)<18||Number(merged.age)>100)throw new Error('Enter your name and a valid age of 18 or older.');merged.name=String(merged.name).trim();merged.age=Number(merged.age);let saved;if(DEMO_MODE)saved=merged;else{if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Firebase is not connected. Your changes were not saved.');saved=await saveFirebaseProfile(merged);}localStorage.setItem('polyconnect_myprofile',JSON.stringify(saved));updateHeaderAvatar();showMyProfile();renderCards();return saved;};
+window.signOutPolyConnect=async()=>{if(!DEMO_MODE&&firebaseAuthReady()&&firebaseAuth.currentUser)await firebaseAuth.signOut();localStorage.removeItem('polyconnect_user');localStorage.removeItem('polyconnect_myprofile');location.reload();};
+window.showPolyConnectToast=showToast;
+
 init();
 </script>
+<script type="module" src="./src/features/settings/settings.js"></script>
+<script type="module" src="./src/features/profile/profile-settings.js"></script>
 </body>
 </html>

@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+
+    function validPublicProfile(data) {
+      return data.keys().hasOnly([
+          'name', 'age', 'gender', 'bio', 'school', 'department', 'level',
+          'state', 'interests', 'hobbies', 'relationshipGoal', 'religion',
+          'languages', 'image', 'verified', 'createdAt'
+        ])
+        && data.keys().hasAll(['name', 'age', 'gender', 'school', 'image', 'verified', 'createdAt'])
+        && data.name is string
+        && data.name.size() >= 1
+        && data.name.size() <= 80
+        && data.age is int
+        && data.age >= 18
+        && data.age <= 120
+        && data.gender is string
+        && data.gender.size() <= 32
+        && data.school is string
+        && data.school.size() <= 160
+        && data.image is string
+        && data.image.size() <= 2048
+        && data.image.matches('^https://.*')
+        && data.verified == false
+        && data.createdAt is int
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('department' in data) || (data.department is string && data.department.size() <= 120))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 40))
+        && (!('state' in data) || (data.state is string && data.state.size() <= 80))
+        && (!('interests' in data) || (data.interests is list && data.interests.size() <= 30))
+        && (!('hobbies' in data) || (data.hobbies is string && data.hobbies.size() <= 500))
+        && (!('relationshipGoal' in data) || (data.relationshipGoal is string && data.relationshipGoal.size() <= 80))
+        && (!('religion' in data) || (data.religion is string && data.religion.size() <= 80))
+        && (!('languages' in data) || (data.languages is string && data.languages.size() <= 160));
+    }
+
+    match /profiles/{uid} {
+      // The owner can read their own profile, including legacy data that only they may repair.
+      // Discovery reads use the separate publicProfiles collection.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && (!validPublicProfile(resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      // Account deletion is a coordinated server-side operation; do not partially delete here.
+      allow delete: if false;
+    }
+
+
+    match /publicProfiles/{uid} {
+      // This collection is populated only by validated profile writes. Keeping it separate
+      // prevents discovery queries from exposing legacy/private fields in /profiles.
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+
+    // Other dating operations remain closed until their trusted data model and rules
+    // are implemented and tested. This prevents the prototype's old client writes
+    // from becoming an unintended production API.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
