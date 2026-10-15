@@ -464,6 +464,7 @@ firebaseAuth.onAuthStateChanged(async user=>{
 // A signed-out or unresolved session must never leave protected screens visible.
 if(!user){
 localStorage.removeItem('polyconnect_user');
+localStorage.removeItem('polyconnect_myprofile');
 document.getElementById('profile-wizard').classList.add('hidden');
 document.getElementById('app').classList.add('hidden');
 document.getElementById('login-screen').classList.remove('hidden');
@@ -485,7 +486,8 @@ return;
 if(!firebaseAuth.currentUser||firebaseAuth.currentUser.uid!==user.uid)return;
 if(!user.emailVerified){localStorage.removeItem('polyconnect_user');showEmailVerification(user.email);return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email,emailVerified:true}));
-try{await loadFirebaseProfile(user.uid);}catch(error){
+let profileExists=false;
+try{profileExists=await loadFirebaseProfile(user.uid);}catch(error){
 console.warn('Could not load Firebase profile; keeping app locked',error);
 document.getElementById('profile-wizard').classList.add('hidden');
 document.getElementById('app').classList.add('hidden');
@@ -494,16 +496,18 @@ showToast('Could not load your profile securely. Please try again.','error');
 return;
 }
 if(!firebaseAuth.currentUser||firebaseAuth.currentUser.uid!==user.uid)return;
-const myProfile=localStorage.getItem('polyconnect_myprofile');
-if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
+if(profileExists){showApp();updateHeaderAvatar();renderCards();renderConversations();}
 else showWizard();
 });
 }
 
 async function loadFirebaseProfile(uid){
-if(!firebaseReady()||!uid)return;
+if(!firebaseReady()||!uid)throw new Error('Firebase profile access is unavailable');
+localStorage.removeItem('polyconnect_myprofile');
 const doc=await firebaseDb.collection('profiles').doc(uid).get();
-if(doc.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(doc.data()));
+if(!doc.exists)return false;
+localStorage.setItem('polyconnect_myprofile',JSON.stringify(doc.data()));
+return true;
 }
 
 async function saveFirebaseProfile(profile){
@@ -555,9 +559,10 @@ const credential=await firebaseAuth.signInWithEmailAndPassword(email,pass);
 await credential.user.reload();
 if(!credential.user.emailVerified){showEmailVerification(credential.user.email);showToast('Please verify your email before continuing','error');return;}
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name:credential.user.displayName||'',email:credential.user.email,emailVerified:true}));
+const profileExists=await loadFirebaseProfile(credential.user.uid);
+if(!firebaseAuth.currentUser||firebaseAuth.currentUser.uid!==credential.user.uid)return;
 showToast('Welcome back!');
-const mp=localStorage.getItem('polyconnect_myprofile');
-if(mp){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();
+if(profileExists){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();
 return;
 }catch(error){showToast('Login failed. Check your email and password.','error');return;}
 }
