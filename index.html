@@ -87,7 +87,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div class="space-y-4">
 <div><input type="text" id="signup-name" placeholder="Full Name" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div><input type="email" id="signup-email" placeholder="student@poly.edu" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
-<div><input type="password" id="signup-password" placeholder="Min 6 characters" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
+<div><input type="password" id="signup-password" placeholder="At least 8 characters" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:bg-white/20 transition"></div>
 <div class="flex items-start gap-2 text-white/80 text-xs"><input id="signup-consent" type="checkbox" class="mt-0.5 accent-purple-600"><label for="signup-consent">I am 18+ and agree to the safety rules, respectful conduct, and data storage needed to run my account.</label></div>
 <button onclick="doSignup()" class="w-full py-3.5 rounded-xl bg-white text-purple-700 font-bold shadow-lg btn-press transition hover:bg-gray-100">Sign Up</button>
 <p class="text-center text-white/70 text-sm">Have an account? <button onclick="toggleAuthMode()" class="text-white font-semibold underline">Log In</button></p>
@@ -417,7 +417,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 
 <!-- Toast -->
-<div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[90] bg-gray-800 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
+<div id="toast" class="fixed top-24 left-1/2 transform -translate-x-1/2 z-[110] bg-gray-800 dark:bg-white text-white dark:text-gray-900 px-5 py-3 rounded-full shadow-xl text-sm font-medium opacity-0 pointer-events-none transition-opacity duration-300 flex items-center gap-2">
 <i class="fas fa-check-circle text-green-400 dark:text-green-600"></i><span id="toast-msg">Success!</span>
 </div>
 </div>
