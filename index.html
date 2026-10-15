@@ -496,7 +496,7 @@ publicProfile.verified=false;
 if(typeof publicProfile.image!=='string'||!publicProfile.image.startsWith('https://')){
 publicProfile.image='https://ui-avatars.com/api/?name='+encodeURIComponent(publicProfile.name||'PolyConnect User')+'&background=8b5cf6&color=fff&size=400';
 }
-await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(publicProfile,{merge:true});
+await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(publicProfile);
 return publicProfile;
 }
 
@@ -878,6 +878,7 @@ setTimeout(()=>nextCard(),350);
 }
 
 function superLike(){
+if(!DEMO_MODE){showToast('Real matching is not enabled yet. Your super-like was not sent.','error');return;}
 const card=getVisibleCard();if(!card)return;
 swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
 card.style.transform='scale(1.1)';card.style.opacity='0';
@@ -932,9 +933,9 @@ function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blo
 function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
 function recordLike(profileId){const likes=JSON.parse(localStorage.getItem('polyconnect_likes')||'[]');if(!likes.includes(profileId)){likes.push(profileId);localStorage.setItem('polyconnect_likes',JSON.stringify(likes));}}
 function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&(profile.likedMe||profile.relationshipGoal==='Study buddy'||profile.verified&&profileId%2===0));}
-function blockUser(profileId){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
-function reportUser(profileId,reason){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
-function unmatchUser(profileId,notify=true){let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
+function blockUser(profileId){if(!DEMO_MODE){showToast('Server-enforced blocking is not available yet. No block was recorded.','error');return;}const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
+function reportUser(profileId,reason){if(!DEMO_MODE){showToast('Server-backed reporting is not available yet. No report was submitted.','error');return;}const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
+function unmatchUser(profileId,notify=true){if(!DEMO_MODE){showToast('Server-side unmatching is not available yet. No changes were made.','error');return;}let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
 function renderSafetyCenter(){const reportsEl=document.getElementById('reports-list'),blockedEl=document.getElementById('blocked-list');if(reportsEl){const reports=getReportedItems();reportsEl.innerHTML=reports.length?reports.map(r=>`<div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20"><p class="font-semibold text-red-600 dark:text-red-300">${r.name}</p><p>${r.reason}</p><p class="text-xs opacity-70">${r.time}</p></div>`).join(''):'No reports saved on this device.';}if(blockedEl){const blocked=getBlockedIds();blockedEl.innerHTML=blocked.length?blocked.map(id=>{const p=profiles.find(x=>x.id===id);return `<div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900"><span>${p?p.name:'User #'+id}</span><button onclick="unblockUser(${id})" class="text-purple-600 font-bold text-xs">Unblock</button></div>`}).join(''):'No blocked users.';}}
 function unblockUser(profileId){const blocked=getBlockedIds().filter(id=>id!==profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));renderCards();renderSafetyCenter();showToast('User unblocked');}
 function deleteAccountData(){
@@ -1045,6 +1046,7 @@ area.scrollTop=area.scrollHeight;
 }
 
 function sendMessage(){
+if(!DEMO_MODE){showToast('Live messaging is not enabled yet. No message was sent.','error');return;}
 const input=document.getElementById('chat-input');
 const text=input.value.trim();
 if(!text||!currentChatId)return;
