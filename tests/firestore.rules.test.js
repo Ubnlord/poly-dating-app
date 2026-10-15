@@ -70,6 +70,17 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     await assertSucceeds(getDoc(doc(db, "profiles/alice")));
   });
 
+  it("denies reads of legacy profiles containing selfie data or claimed verification", async function () {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "profiles/legacy"), profile({
+        verified: true,
+        selfie: "data:image/jpeg;base64,private"
+      }));
+    });
+    const db = userDb("bob");
+    await assertFails(getDoc(doc(db, "profiles/legacy")));
+  });
+
   it("denies creating another user's profile", async function () {
     const db = userDb("alice");
     await assertFails(setDoc(doc(db, "profiles/bob"), profile()));
