@@ -435,7 +435,8 @@ measurementId:"G-TD810WXVH8"
 
 let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseAnalytics=null;
 const DEMO_MODE=new URLSearchParams(window.location.search).get('demo')==='1';
-const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
+const firebaseAuthReady=()=>Boolean(firebaseApp&&firebaseAuth);
+const firebaseReady=()=>Boolean(firebaseAuthReady()&&firebaseDb);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
 function initFirebase(){
@@ -446,8 +447,14 @@ try{
 if(!firebase.apps||!firebase.apps.length)firebaseApp=firebase.initializeApp(firebaseConfig);
 else firebaseApp=firebase.app();
 firebaseAuth=firebase.auth();
-firebaseDb=firebase.firestore();
-if(!firebaseAuth||!firebaseDb)throw new Error('Firebase Auth or Firestore SDK did not initialize.');
+if(!firebaseAuth)throw new Error('Firebase Authentication SDK did not initialize.');
+try{
+firebaseDb=typeof firebase.firestore==='function'?firebase.firestore():null;
+if(!firebaseDb)console.warn('Firestore SDK is unavailable; account authentication can still work.');
+}catch(firestoreError){
+firebaseDb=null;
+console.error('Firestore initialization failed; account authentication can still work:',firestoreError);
+}
 if(firebase.analytics){try{firebaseAnalytics=firebase.analytics();}catch(analyticsError){console.warn('Firebase Analytics unavailable:',analyticsError);}}
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user){if(!DEMO_MODE){document.getElementById('login-screen').classList.remove('hidden');document.getElementById('app').classList.add('hidden');}return;}
@@ -571,8 +578,8 @@ const button=document.querySelector('#signup-form button[onclick="doSignup()"]')
 if(!name||!email||!pass){showToast('Please fill in your name, email and password.','error');return;}
 if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent.','error');return;}
 if(pass.length<8){showToast('Use a password with at least 8 characters.','error');return;}
-if(!firebaseReady()){
-showToast(DEMO_MODE?'Demo mode is active, but local signup could not start.':'Firebase is not ready. Reload the app; if this persists, check that Firebase SDK scripts are reachable.', 'error');
+if(!firebaseAuthReady()){
+showToast(DEMO_MODE?'Demo mode is active, but local signup could not start.':'Firebase Authentication is not ready. Check the connection and reload the app.', 'error');
 return;
 }
 if(button){button.disabled=true;button.textContent='Creating account…';button.classList.add('opacity-70');}
