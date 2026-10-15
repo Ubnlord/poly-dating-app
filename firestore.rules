@@ -40,7 +40,7 @@ service cloud.firestore {
 
     match /profiles/{uid} {
       // Profile documents must contain only public profile fields.
-      allow read: if signedIn();
+      allow read: if signedIn() && validPublicProfile(resource.data);
       allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
       allow update: if signedIn()
         && request.auth.uid == uid
