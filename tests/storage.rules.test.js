@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { after, before, beforeEach, describe, it } from "mocha";
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { deleteObject, ref, uploadBytes } from "firebase/storage";
+import { getBytes, ref, uploadBytes } from "firebase/storage";
 
 const projectId = "demo-polyconnect";
 let testEnv;
@@ -77,12 +77,17 @@ describe("PolyConnect Storage rules — profile photos", function () {
     }));
   });
 
-  it("denies verified users from reading other private Storage paths", async function () {
+  it("denies uploads to unapproved paths and denies unauthenticated photo reads", async function () {
     const storage = storageFor("alice");
     await assertFails(uploadBytes(ref(storage, "private/alice/file"), imageBytes, {
       contentType: "image/jpeg",
       customMetadata: { ownerUid: "alice" }
     }));
-    await assertFails(deleteObject(ref(storage, "profilePhotos/bob/avatar")));
+    await assertSucceeds(uploadBytes(ref(storage, "profilePhotos/alice/avatar"), imageBytes, {
+      contentType: "image/jpeg",
+      customMetadata: { ownerUid: "alice" }
+    }));
+    const anonymousStorage = testEnv.unauthenticatedContext().storage();
+    await assertFails(getBytes(ref(anonymousStorage, "profilePhotos/alice/avatar")));
   });
 });
