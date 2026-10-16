@@ -24,7 +24,8 @@ service cloud.firestore {
         && data.school.size() <= 160
         && data.imagePath is string
         && data.imagePath.size() <= 200
-        && (data.imagePath == '' || data.imagePath.matches('^profilePhotos/[A-Za-z0-9_-]+/avatar
+        && (data.imagePath == '' || data.imagePath.matches('^profilePhotos/[A-Za-z0-9_-]+/avatar$'))
+        && data.verified == false
         && data.createdAt is int
         && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
         && (!('department' in data) || (data.department is string && data.department.size() <= 120))
