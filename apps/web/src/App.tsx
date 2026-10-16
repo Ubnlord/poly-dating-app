@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { ArrowRight, BadgeCheck, BookOpen, Heart, LockKeyhole, MailCheck, ShieldCheck, Sparkles } from "lucide-react";
-import { calculateAge, logIn, logOut, resendVerification, signUp } from "./lib/auth";
+import { calculateAge, logIn, logOut, resetPassword, resendVerification, signUp } from "./lib/auth";
 import { auth, firebaseConfigured, firebaseSetupHint } from "./lib/firebase";
 import type { AuthView } from "./types";
 import ProfileHome from "./features/ProfileHome";
@@ -43,6 +43,9 @@ export default function App() {
         const created = await signUp(email, password, name, dob);
         setUser(null); setView("verify-email");
         setNotice(`We sent a verification link to ${created.email}. Verify your email, then sign in.`);
+      } else if (view === "reset-password") {
+        await resetPassword(email);
+        setNotice("If an account exists for that email, a password reset link has been sent. Check your inbox and spam folder.");
       } else {
         await logIn(email, password);
         setNotice("Signed in successfully.");
@@ -93,7 +96,17 @@ export default function App() {
       </section>
 
       <section className="auth-panel">
-        {user ? <ProfileHome user={user} onLogout={handleLogout} /> : view === "verify-email" ? <div className="auth-card">
+        {user ? <ProfileHome user={user} onLogout={handleLogout} /> : view === "reset-password" ? <div className="auth-card">
+          <div className="form-icon"><MailCheck size={24} /></div>
+          <span className="eyebrow">ACCOUNT RECOVERY</span><h2>Reset your password.</h2>
+          <p className="form-intro">Enter the email address for your account. If it matches an account, Firebase will send a secure reset link.</p>
+          {notice && <div className="notice info">{notice}</div>}{error && <div className="notice error">{error}</div>}
+          <form onSubmit={handleSubmit}>
+            <label>Email address<input type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" required /></label>
+            <button className="primary-button" type="submit" disabled={busy || !firebaseConfigured}>{busy ? "Sending…" : "Send reset link"} <ArrowRight size={17} /></button>
+          </form>
+          <button className="text-button" onClick={() => { setView("login"); resetMessages(); }}>Back to sign in</button>
+        </div> : view === "verify-email" ? <div className="auth-card">
           <div className="form-icon"><MailCheck size={24} /></div>
           <span className="eyebrow">ONE QUICK STEP</span><h2>Check your inbox.</h2>
           <p className="form-intro">Verify your email before continuing. This helps confirm you can access the email address — it does not verify your age or student identity.</p>
@@ -117,6 +130,7 @@ export default function App() {
             <label>Password<input type="password" autoComplete={view === "signup" ? "new-password" : "current-password"} value={password} onChange={e=>setPassword(e.target.value)} placeholder={view === "signup" ? "At least 8 characters" : "Your password"} minLength={view === "signup" ? 8 : 1} required /></label>
             <button className="primary-button" type="submit" disabled={busy || !firebaseConfigured}>{busy ? "Please wait…" : view === "signup" ? "Create account" : "Sign in"} <ArrowRight size={17} /></button>
           </form>
+          {view === "login" && <button className="text-button forgot-password" onClick={() => { resetMessages(); setView("reset-password"); }} disabled={busy}>Forgot password?</button>}
           <p className="legal-note">By continuing, you agree to use PolyConnect respectfully. Terms and Privacy Policy must be published before public launch.</p>
         </div>}
         <footer className="auth-footer"><span>© {new Date().getFullYear()} PolyConnect</span><span><ShieldCheck size={14} /> Built around respect and safety</span></footer>
