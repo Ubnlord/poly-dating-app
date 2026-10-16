@@ -1,5 +1,6 @@
 import { doc, getDoc, writeBatch } from "firebase/firestore";
-import { db } from "./firebase";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { db, storage } from "./firebase";
 
 export interface ProfileDraft {
   name: string;
@@ -8,6 +9,7 @@ export interface ProfileDraft {
   school: string;
   bio: string;
   interests: string[];
+  image?: string;
 }
 
 export interface SavedProfile extends ProfileDraft {
@@ -24,6 +26,16 @@ function getDb() {
   return db;
 }
 
+export async function uploadProfilePhoto(uid: string, file: File): Promise<string> {
+  if (!storage) throw new Error("Firebase Storage is not configured.");
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) throw new Error("Choose a JPG, PNG, or WebP image.");
+  if (file.size > 5 * 1024 * 1024) throw new Error("Profile photos must be 5 MB or smaller.");
+  if (file.size === 0) throw new Error("The selected image is empty.");
+  const objectRef = ref(storage, "profilePhotos/" + uid + "/avatar");
+  await uploadBytes(objectRef, file, { contentType: file.type, customMetadata: { ownerUid: uid } });
+  return getDownloadURL(objectRef);
+}
 export async function getMyProfile(uid: string): Promise<SavedProfile | null> {
   const database = getDb();
   const snapshot = await getDoc(doc(database, "profiles", uid));
@@ -58,7 +70,7 @@ export async function saveMyProfile(uid: string, draft: ProfileDraft): Promise<v
     school: draft.school.trim().slice(0, 160),
     bio: draft.bio.trim().slice(0, 500),
     interests: draft.interests.slice(0, 30),
-    image: DEFAULT_IMAGE,
+    image: typeof draft.image === "string" && draft.image.startsWith("https://") ? draft.image : DEFAULT_IMAGE,
     verified: false,
     createdAt,
   };
