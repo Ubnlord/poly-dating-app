@@ -4,8 +4,10 @@ on:
   pull_request:
     paths:
       - "firestore.rules"
+      - "storage.rules"
       - "tests/auth.emulator.test.js"
       - "firebase.json"
+      - ".github/workflows/phase1-firebase-security.yml"
       - "package.json"
       - "tests/**"
       - "index.html"
