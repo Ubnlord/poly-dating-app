@@ -3,6 +3,7 @@ import type { User } from "firebase/auth";
 import { ArrowRight, BadgeCheck, Heart, LoaderCircle } from "lucide-react";
 import { calculateAge } from "../lib/auth";
 import { getMyProfile, saveMyProfile, type SavedProfile } from "../lib/profiles";
+import Discovery from "./Discovery";
 
 const schools = ["Federal Polytechnic Oko", "Yaba College of Technology", "Federal Polytechnic Nekede", "The Polytechnic, Ibadan", "Other Nigerian Polytechnic"];
 const interestOptions = ["Music", "Movies", "Tech", "Travel", "Fitness", "Books", "Fashion", "Food", "Gaming", "Art", "Sports", "Business"];
@@ -20,6 +21,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [activeTab, setActiveTab] = useState<"profile" | "discover">("profile");
 
   useEffect(() => {
     let active = true;
@@ -52,6 +54,8 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
   if (loading) return <div className="signed-in-card"><LoaderCircle className="spin" /><p>Loading your profile…</p></div>;
 
   if (!editing && profile) return <div className="signed-in-card">
+    <div className="profile-tabs"><button className={activeTab === "profile" ? "active" : ""} onClick={() => setActiveTab("profile")}>My profile</button><button className={activeTab === "discover" ? "active" : ""} onClick={() => setActiveTab("discover")}>Discover</button></div>
+    {activeTab === "discover" ? <Discovery user={user} /> : <>
     <div className="success-icon"><BadgeCheck size={30} /></div><span className="eyebrow">PROFILE SAVED</span>
     <h2>Welcome, {profile.name.split(" ")[0]}.</h2><p>Your profile is saved for <strong>{user.email}</strong>.</p>
     <div className="profile-preview"><div className="profile-avatar"><Heart fill="currentColor" size={26} /></div><div><strong>{profile.name}, {profile.age}</strong><small>{profile.school}</small><small>{profile.gender}</small></div><span className="profile-status">You</span></div>
@@ -79,5 +83,6 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     </form>
     <button className="text-button" onClick={onLogout} disabled={busy}>Sign out instead</button>
     <p className="legal-note">School selection and email verification do not prove student identity. Your profile is not independently age-verified.</p>
+    </>}
   </div>;
 }
