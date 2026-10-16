@@ -1,5 +1,5 @@
 import { doc, getDoc, writeBatch } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getBytes, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./firebase";
 
 export interface ProfileDraft {
@@ -9,12 +9,12 @@ export interface ProfileDraft {
   school: string;
   bio: string;
   interests: string[];
-  image?: string;
+  imagePath?: string;
 }
 
 export interface SavedProfile extends ProfileDraft {
   uid: string;
-  image: string;
+  imagePath: string;
   verified: false;
   createdAt: number;
 }
@@ -57,7 +57,7 @@ export async function uploadProfilePhoto(uid: string, file: File): Promise<strin
   }
   const objectRef = ref(storage, "profilePhotos/" + uid + "/avatar");
   await uploadBytes(objectRef, file, { contentType: file.type, customMetadata: { ownerUid: uid } });
-  return getDownloadURL(objectRef);
+  return objectRef.fullPath;
 }
 export async function getMyProfile(uid: string): Promise<SavedProfile | null> {
   const database = getDb();
@@ -72,7 +72,7 @@ export async function getMyProfile(uid: string): Promise<SavedProfile | null> {
     school: String(data.school ?? ""),
     bio: String(data.bio ?? ""),
     interests: Array.isArray(data.interests) ? data.interests.filter((v): v is string => typeof v === "string") : [],
-    image: String(data.image ?? DEFAULT_IMAGE),
+    imagePath: typeof data.imagePath === "string" ? data.imagePath : "",
     verified: false,
     createdAt: Number(data.createdAt ?? Date.now()),
   };
@@ -93,7 +93,7 @@ export async function saveMyProfile(uid: string, draft: ProfileDraft): Promise<v
     school: draft.school.trim().slice(0, 160),
     bio: draft.bio.trim().slice(0, 500),
     interests: draft.interests.slice(0, 30),
-    image: typeof draft.image === "string" && draft.image.startsWith("https://") ? draft.image : DEFAULT_IMAGE,
+    imagePath: typeof draft.imagePath === "string" && draft.imagePath.startsWith("profilePhotos/" + uid + "/") ? draft.imagePath : "",
     verified: false,
     createdAt,
   };
@@ -104,4 +104,11 @@ export async function saveMyProfile(uid: string, draft: ProfileDraft): Promise<v
   batch.set(doc(database, "profiles", uid), profile);
   batch.set(doc(database, "publicProfiles", uid), profile);
   await batch.commit();
+}
+
+export async function loadProfilePhoto(path: string): Promise<string> {
+  if (!storage || !path.startsWith("profilePhotos/")) return "";
+  const bytes = await getBytes(ref(storage, path), 5 * 1024 * 1024);
+  const contentType = path.endsWith("/avatar") ? "image/jpeg" : "application/octet-stream";
+  return URL.createObjectURL(new Blob([bytes], { type: contentType }));
 }
