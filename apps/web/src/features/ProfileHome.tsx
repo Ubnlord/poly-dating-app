@@ -41,8 +41,8 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice("");
-    const age = calculateAge(dob);
-    if (age < 18) { setError("PolyConnect is for adults aged 18 and over."); return; }
+    const age = dob ? calculateAge(dob) : profile?.age ?? -1;
+    if (age < 18) { setError("PolyConnect is for adults aged 18 and over. Enter your date of birth to establish your age."); return; }
     if (!name.trim() || !gender) { setError("Enter your display name and choose a gender."); return; }
     setBusy(true);
     try {
@@ -78,7 +78,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     {notice && <div className="notice info">{notice}</div>}{error && <div className="notice error">{error}</div>}
     <form onSubmit={save}>
       <label>Display name<input value={name} onChange={e=>setName(e.target.value)} maxLength={80} required /></label>
-      <label>Date of birth<input type="date" value={dob} max={new Date().toISOString().slice(0,10)} onChange={e=>setDob(e.target.value)} required/><small className="field-hint">18+ only. Self-declared age is not independent age verification.</small></label>
+      <label>Date of birth<input type="date" value={dob} max={new Date().toISOString().slice(0,10)} onChange={e=>setDob(e.target.value)} required={!profile}/><small className="field-hint">{profile ? "Leave blank to keep your current age. Date of birth is not stored." : "18+ only. Self-declared age is not independent age verification."}</small></label>
       <label>Polytechnic<select value={school} onChange={e=>setSchool(e.target.value)}>{schools.map(item=><option key={item}>{item}</option>)}</select></label>
       <label>Gender<select value={gender} onChange={e=>setGender(e.target.value)} required><option value="">Choose an option</option><option>Woman</option><option>Man</option><option>Non-binary</option><option>Prefer not to say</option></select></label>
       <label>Profile photo<input type="file" accept="image/jpeg,image/png,image/webp" onChange={e => {
