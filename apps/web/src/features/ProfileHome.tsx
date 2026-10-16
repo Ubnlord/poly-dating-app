@@ -66,6 +66,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     <div className="notice info">Your profile is stored in Firestore. Discovery and messaging remain disabled until their access rules and backend operations are implemented.</div>
     <button className="secondary-button" onClick={()=>{setDob("");setEditing(true);}}>Edit profile</button>
     <button className="primary-button" onClick={onLogout} disabled={busy}>Sign out <ArrowRight size={17}/></button>
+    </>}
   </div>;
 
   return <div className="auth-card">
