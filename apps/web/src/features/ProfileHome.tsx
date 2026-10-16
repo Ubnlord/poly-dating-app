@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { User } from "firebase/auth";
 import { ArrowRight, BadgeCheck, Heart, LoaderCircle } from "lucide-react";
-import { calculateAge } from "./auth";
-import { getMyProfile, saveMyProfile, type SavedProfile } from "./profiles";
+import { calculateAge } from "../lib/auth";
+import { getMyProfile, saveMyProfile, type SavedProfile } from "../lib/profiles";
 
 const schools = ["Federal Polytechnic Oko", "Yaba College of Technology", "Federal Polytechnic Nekede", "The Polytechnic, Ibadan", "Other Nigerian Polytechnic"];
 const interestOptions = ["Music", "Movies", "Tech", "Travel", "Fitness", "Books", "Fashion", "Food", "Gaming", "Art", "Sports", "Business"];
