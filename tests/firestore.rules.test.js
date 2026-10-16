@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   initializeTestEnvironment
 } from "@firebase/rules-unit-testing";
-import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
 
 const projectId = "demo-polyconnect";
 let testEnv;
@@ -204,6 +204,53 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
     const signedOutDb = testEnv.unauthenticatedContext().firestore();
     await assertFails(getDoc(doc(signedOutDb, "profiles/alice")));
     await assertFails(setDoc(doc(signedOutDb, "profiles/alice"), profile({ name: "Tampered" })));
+  });
+
+  it("allows a user to submit a bounded report about another user", async function () {
+    const db = userDb("reporter");
+    await assertSucceeds(setDoc(doc(db, "reports/report-1"), {
+      reporterUid: "reporter", targetUid: "target", reason: "harassment",
+      details: "Unwanted messages", status: "pending", createdAt: serverTimestamp()
+    }));
+  });
+
+  it("denies forged reports, self-reports, invalid reasons, and report mutation", async function () {
+    const db = userDb("reporter");
+    await assertFails(setDoc(doc(db, "reports/forged"), {
+      reporterUid: "someone-else", targetUid: "target", reason: "spam", status: "pending", createdAt: serverTimestamp()
+    }));
+    await assertFails(setDoc(doc(db, "reports/self"), {
+      reporterUid: "reporter", targetUid: "reporter", reason: "spam", status: "pending", createdAt: serverTimestamp()
+    }));
+    await assertFails(setDoc(doc(db, "reports/bad-reason"), {
+      reporterUid: "reporter", targetUid: "target", reason: "ban-them", status: "pending", createdAt: serverTimestamp()
+    }));
+    await testEnv.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), "reports/immutable"), {
+        reporterUid: "reporter", targetUid: "target", reason: "spam", status: "pending", createdAt: 1760000000000
+      });
+    });
+    await assertFails(updateDoc(doc(db, "reports/immutable"), { status: "reviewed" }));
+    await assertFails(deleteDoc(doc(db, "reports/immutable")));
+  });
+
+  it("keeps reports private to their reporter", async function () {
+    await testEnv.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), "reports/private"), {
+        reporterUid: "alice", targetUid: "bob", reason: "spam", status: "pending", createdAt: 1760000000000
+      });
+    });
+    await assertSucceeds(getDoc(doc(userDb("alice"), "reports/private")));
+    await assertFails(getDoc(doc(userDb("bob"), "reports/private")));
+  });
+
+  it("allows users to create and remove only their own block records", async function () {
+    const alice = userDb("alice");
+    await assertSucceeds(setDoc(doc(alice, "users/alice/blocks/bob"), { targetUid: "bob", createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(alice, "users/bob/blocks/alice"), { targetUid: "alice", createdAt: serverTimestamp() }));
+    await assertFails(setDoc(doc(alice, "users/alice/blocks/alice"), { targetUid: "alice", createdAt: serverTimestamp() }));
+    await assertFails(getDoc(doc(userDb("bob"), "users/alice/blocks/bob")));
+    await assertSucceeds(deleteDoc(doc(alice, "users/alice/blocks/bob")));
   });
 
 });
