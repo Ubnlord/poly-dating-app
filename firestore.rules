@@ -64,6 +64,36 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+    match /reports/{reportId} {
+      // Reports are immutable client submissions. Review/status changes require trusted admin tooling.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reporterUid', 'targetUid', 'reason', 'details', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['reporterUid', 'targetUid', 'reason', 'status', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.reason in ['harassment', 'fake-profile', 'underage-concern', 'spam', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && (!('details' in request.resource.data) || (request.resource.data.details is string && request.resource.data.details.size() <= 1000));
+      allow read: if signedIn() && resource.data.reporterUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /users/{uid}/blocks/{targetUid} {
+      // Block lists are private; users can only manage their own block records.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && targetUid != uid
+        && request.resource.data.keys().hasOnly(['targetUid', 'createdAt'])
+        && request.resource.data.targetUid == targetUid
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+      allow update: if false;
+    }
+
     // Other dating operations remain closed until their trusted data model and rules
     // are implemented and tested. This prevents the prototype's old client writes
     // from becoming an unintended production API.
