@@ -44,7 +44,7 @@ describe("PolyConnect Firestore rules — profile foundation", function () {
   });
 
   after(async function () {
-    await testEnv.cleanup();
+    if (testEnv) await testEnv.cleanup();
   });
 
   it("allows an authenticated user to create their own valid 18+ public profile", async function () {
