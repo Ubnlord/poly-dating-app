@@ -36,7 +36,11 @@ describe("Isolated Firebase Auth and Firestore journey", function () {
     await signOut(auth);
     const verifiedA = await signInWithEmailAndPassword(auth, emailA, password);
     await verifiedA.user.getIdToken(true);
-    await setDoc(doc(db, "profiles", verifiedA.user.uid), profile("A")); await signOut(auth);
+    await setDoc(doc(db, "profiles", verifiedA.user.uid), profile("A"));
+    await setDoc(doc(db, "publicProfiles", verifiedA.user.uid), profile("A"));
+    const publicA = await getDoc(doc(db, "publicProfiles", verifiedA.user.uid));
+    if (!publicA.exists() || publicA.data().name !== "A") throw new Error("Account A public profile projection was not saved");
+    await signOut(auth);
     if (auth.currentUser !== null) throw new Error("Sign-out failed for account A");
     const loginA = await signInWithEmailAndPassword(auth, emailA, password);
     const ownA = await getDoc(doc(db, "profiles", loginA.user.uid));
@@ -53,7 +57,11 @@ describe("Isolated Firebase Auth and Firestore journey", function () {
     const ownB = await getDoc(doc(db, "profiles", loginB.user.uid));
     if (!ownB.exists() || ownB.data().name !== "B") throw new Error("Account B profile not restored on login");
     await assertFails(getDoc(doc(db, "profiles", a.user.uid)));
+    await assertFails(setDoc(doc(db, "profiles", a.user.uid), profile("Attempted cross-account overwrite")));
+    const publicProfileA = await getDoc(doc(db, "publicProfiles", a.user.uid));
+    if (!publicProfileA.exists() || publicProfileA.data().name !== "A") throw new Error("Switching accounts changed account A's public profile");
     await signOut(auth); if (auth.currentUser !== null) throw new Error("Final sign-out failed");
     await assertFails(getDoc(doc(db, "profiles", b.user.uid)));
+    await assertFails(getDoc(doc(db, "publicProfiles", b.user.uid)));
   });
 });
