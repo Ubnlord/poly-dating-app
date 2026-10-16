@@ -19,7 +19,6 @@ export interface SavedProfile extends ProfileDraft {
   createdAt: number;
 }
 
-const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80";
 
 function getDb() {
   if (!db) throw new Error("Firebase is not configured. Add your development Firebase settings.");
