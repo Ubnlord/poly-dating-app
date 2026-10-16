@@ -96,6 +96,5 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     </form>
     <button className="text-button" onClick={onLogout} disabled={busy}>Sign out instead</button>
     <p className="legal-note">School selection and email verification do not prove student identity. Your profile is not independently age-verified.</p>
-    </>}
   </div>;
 }
