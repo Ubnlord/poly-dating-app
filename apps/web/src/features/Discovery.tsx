@@ -3,6 +3,7 @@ import { addDoc, collection, doc, getDocs, limit, query, serverTimestamp, setDoc
 import type { User } from "firebase/auth";
 import { Ban, Compass, Flag, Heart, RefreshCw, ShieldCheck, SlidersHorizontal } from "lucide-react";
 import { db } from "../lib/firebase";
+import { loadProfilePhoto } from "../lib/profiles";
 
 type PublicProfile = {
   id: string;
@@ -12,7 +13,8 @@ type PublicProfile = {
   school: string;
   bio: string;
   interests: string[];
-  image: string;
+  imagePath: string;
+  imageUrl: string;
   verified: false;
 };
 
@@ -54,12 +56,14 @@ export default function Discovery({ user }: { user: User }) {
               school: typeof data.school === "string" ? data.school : "",
               bio: typeof data.bio === "string" ? data.bio : "",
               interests: Array.isArray(data.interests) ? data.interests.filter((v): v is string => typeof v === "string") : [],
-              image: typeof data.image === "string" ? data.image : "",
+              imagePath: typeof data.imagePath === "string" ? data.imagePath : "",
+              imageUrl: "",
               verified: false as const,
             };
           })
           .filter(profile => profile.age >= 18 && profile.age <= 120);
-        if (active) setProfiles(found);
+        const withPhotos = await Promise.all(found.map(async profile => ({ ...profile, imageUrl: profile.imagePath ? await loadProfilePhoto(profile.imagePath).catch(() => "") : "" })));
+        if (active) setProfiles(withPhotos); else withPhotos.forEach(profile => { if (profile.imageUrl.startsWith("blob:")) URL.revokeObjectURL(profile.imageUrl); });
       } catch (e) {
         if (active) setError(e instanceof Error ? e.message : "Could not load discovery profiles.");
       } finally { if (active) setLoading(false); }
@@ -108,7 +112,7 @@ export default function Discovery({ user }: { user: User }) {
     {error && <div className="notice error">{error}</div>}{actionMessage && <div className="notice info" role="status">{actionMessage}</div>}
     {loading ? <div className="discovery-empty">Loading profiles…</div> : filtered.length === 0 ? <div className="discovery-empty"><Heart size={28}/><h3>No profiles to show just yet</h3><p>As more verified members create profiles, they’ll appear here. Try changing your filters later.</p></div> :
       <div className="discovery-grid">{filtered.map(profile=><article className="discovery-card" key={profile.id}>
-        <div className="discovery-photo">{profile.image ? <img src={profile.image} alt="" loading="lazy"/> : <div className="discovery-placeholder"><Heart size={36}/></div>}<span className="age-pill">{profile.age}</span></div>
+        <div className="discovery-photo">{profile.imageUrl ? <img src={profile.imageUrl} alt="" loading="lazy"/> : <div className="discovery-placeholder"><Heart size={36}/></div>}<span className="age-pill">{profile.age}</span></div>
         <div className="discovery-card-body"><h3>{profile.name}, {profile.age}</h3><p className="discovery-school">{profile.school}</p>{profile.gender && <span className="discovery-gender">{profile.gender}</span>}{profile.bio && <p className="discovery-bio">{profile.bio}</p>}{profile.interests.length>0&&<div className="interest-list">{profile.interests.slice(0,5).map(i=><span key={i}>{i}</span>)}</div>}<div className="discovery-safety"><ShieldCheck size={14}/> Email verified · Age not independently verified</div><div className="discovery-actions"><button type="button" onClick={() => void reportProfile(profile)} disabled={!!actionBusy}><Flag size={13}/> Report</button><button type="button" onClick={() => void blockProfile(profile)} disabled={!!actionBusy}><Ban size={13}/> Block</button></div></div>
       </article>)}</div>
     }
