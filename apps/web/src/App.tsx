@@ -4,6 +4,7 @@ import { ArrowRight, BadgeCheck, BookOpen, Heart, LockKeyhole, MailCheck, Shield
 import { calculateAge, logIn, logOut, resendVerification, signUp } from "./lib/auth";
 import { auth, firebaseConfigured, firebaseSetupHint } from "./lib/firebase";
 import type { AuthView } from "./types";
+import ProfileHome from "./features/ProfileHome";
 
 const schools = ["Federal Polytechnic Oko", "Yaba College of Technology", "Federal Polytechnic Nekede", "The Polytechnic, Ibadan", "Other Nigerian Polytechnic"];
 
@@ -92,14 +93,7 @@ export default function App() {
       </section>
 
       <section className="auth-panel">
-        {user ? <div className="signed-in-card">
-          <div className="success-icon"><BadgeCheck size={30} /></div>
-          <span className="eyebrow">EMAIL VERIFIED</span>
-          <h2>Welcome{user.displayName ? `, ${user.displayName.split(" ")[0]}` : ""}.</h2>
-          <p>You’re signed in as <strong>{user.email}</strong>.</p>
-          <div className="notice info"><ShieldCheck size={18} /><span>Your secure sign-in is working. Profile setup and discovery will be enabled after the profile data model and access rules are implemented.</span></div>
-          <button className="primary-button" onClick={handleLogout} disabled={busy}>{busy ? "Signing out…" : "Sign out"} <ArrowRight size={17} /></button>
-        </div> : view === "verify-email" ? <div className="auth-card">
+        {user ? <ProfileHome user={user} onLogout={handleLogout} /> : view === "verify-email" ? <div className="auth-card">
           <div className="form-icon"><MailCheck size={24} /></div>
           <span className="eyebrow">ONE QUICK STEP</span><h2>Check your inbox.</h2>
           <p className="form-intro">Verify your email before continuing. This helps confirm you can access the email address — it does not verify your age or student identity.</p>
