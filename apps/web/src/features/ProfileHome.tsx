@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { User } from "firebase/auth";
 import { ArrowRight, BadgeCheck, Heart, LoaderCircle } from "lucide-react";
 import { calculateAge } from "../lib/auth";
-import { getMyProfile, saveMyProfile, uploadProfilePhoto, type SavedProfile } from "../lib/profiles";
+import { getMyProfile, loadProfilePhoto, saveMyProfile, uploadProfilePhoto, type SavedProfile } from "../lib/profiles";
 import Discovery from "./Discovery";
 
 const schools = ["Federal Polytechnic Oko", "Yaba College of Technology", "Federal Polytechnic Nekede", "The Polytechnic, Ibadan", "Other Nigerian Polytechnic"];
@@ -20,6 +20,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
   const [interests, setInterests] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
+  const [savedPhotoUrl, setSavedPhotoUrl] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -33,6 +34,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
       if (saved) {
         setName(saved.name); setSchool(saved.school); setGender(saved.gender);
         setBio(saved.bio); setInterests(saved.interests);
+        if (saved.imagePath) loadProfilePhoto(saved.imagePath).then(url => { if (active) setSavedPhotoUrl(url); else URL.revokeObjectURL(url); }).catch(() => {});
       } else setEditing(true);
     }).catch(e => { if (active) setError(e instanceof Error ? e.message : "Could not load your profile."); })
       .finally(() => { if (active) setLoading(false); });
@@ -46,8 +48,8 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     if (!name.trim() || !gender) { setError("Enter your display name and choose a gender."); return; }
     setBusy(true);
     try {
-      const image = photoFile ? await uploadProfilePhoto(user.uid, photoFile) : profile?.image;
-      await saveMyProfile(user.uid, { name, age, gender, school, bio, interests, image });
+      const imagePath = photoFile ? await uploadProfilePhoto(user.uid, photoFile) : profile?.imagePath;
+      await saveMyProfile(user.uid, { name, age, gender, school, bio, interests, imagePath });
       const next = await getMyProfile(user.uid);
       setProfile(next); setEditing(false); setNotice("Your profile has been saved.");
     } catch (e) { setError(e instanceof Error ? e.message : "Could not save your profile. Check your connection and try again."); }
@@ -61,7 +63,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
     {activeTab === "discover" ? <Discovery user={user} /> : <>
     <div className="success-icon"><BadgeCheck size={30} /></div><span className="eyebrow">PROFILE SAVED</span>
     <h2>Welcome, {profile.name.split(" ")[0]}.</h2><p>Your profile is saved for <strong>{user.email}</strong>.</p>
-    <div className="profile-preview"><div className="profile-avatar">{profile.image ? <img src={profile.image} alt="" /> : <Heart fill="currentColor" size={26} />}</div><div><strong>{profile.name}, {profile.age}</strong><small>{profile.school}</small><small>{profile.gender}</small></div><span className="profile-status">You</span></div>
+    <div className="profile-preview"><div className="profile-avatar">{savedPhotoUrl ? <img src={savedPhotoUrl} alt="" /> : <Heart fill="currentColor" size={26} />}</div><div><strong>{profile.name}, {profile.age}</strong><small>{profile.school}</small><small>{profile.gender}</small></div><span className="profile-status">You</span></div>
     {profile.bio && <p className="profile-bio">{profile.bio}</p>}
     {profile.interests.length > 0 && <div className="interest-list">{profile.interests.map(item=><span key={item}>{item}</span>)}</div>}
     {notice && <div className="notice info">{notice}</div>}
@@ -89,7 +91,7 @@ export default function ProfileHome({ user, onLogout }: { user: User; onLogout: 
           setPhotoPreview(URL.createObjectURL(file));
         } else setPhotoPreview("");
       }} /><small className="field-hint">JPG, PNG, or WebP · maximum 5 MB.</small></label>
-      {(photoPreview || profile?.image) && <div className="photo-preview"><img src={photoPreview || profile?.image} alt="Profile photo preview" /></div>}
+      {(photoPreview || savedPhotoUrl) && <div className="photo-preview"><img src={photoPreview || savedPhotoUrl} alt="Profile photo preview" /></div>}
       <label>About you<textarea value={bio} onChange={e=>setBio(e.target.value)} maxLength={500} rows={3} placeholder="A little about what makes you, you…"/></label>
       <div className="interest-field"><span className="interest-label">Your interests <small>(choose up to 12)</small></span><div className="interest-options">{interestOptions.map(item=><button type="button" key={item} className={interests.includes(item)?"selected":""} onClick={()=>setInterests(current=>current.includes(item)?current.filter(v=>v!==item):[...current,item].slice(0,12))}>{item}</button>)}</div></div>
       <button className="primary-button" type="submit" disabled={busy}>{busy?"Saving profile…":"Save my profile"} <ArrowRight size={17}/></button>
