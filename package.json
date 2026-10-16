@@ -6,10 +6,11 @@
     "test:rules": "firebase emulators:exec --project demo-polyconnect --only firestore \"npm run test:rules:unit\"",
     "test:rules:unit": "mocha --timeout 10000 tests/firestore.rules.test.js",
     "test:auth:unit": "mocha --timeout 20000 tests/auth.emulator.test.js",
-    "test:emulators": "firebase emulators:exec --project demo-polyconnect --only auth,firestore \"npm run test:rules:unit && npm run test:auth:unit\"",
+    "test:emulators": "firebase emulators:exec --project demo-polyconnect --only auth,firestore,storage \"npm run test:rules:unit && npm run test:auth:unit && npm run test:storage:unit\"",
     "dev:web": "npm run dev --workspace @polyconnect/web",
     "build:web": "npm run build --workspace @polyconnect/web",
-    "typecheck:web": "npm run typecheck --workspace @polyconnect/web"
+    "typecheck:web": "npm run typecheck --workspace @polyconnect/web",
+    "test:storage:unit": "mocha --timeout 10000 tests/storage.rules.test.js"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
