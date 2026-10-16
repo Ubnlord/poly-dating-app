@@ -1,4 +1,4 @@
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { doc, getDoc, writeBatch } from "firebase/firestore";
 import { db } from "./firebase";
 
 export interface ProfileDraft {
@@ -65,6 +65,8 @@ export async function saveMyProfile(uid: string, draft: ProfileDraft): Promise<v
 
   // The two documents contain only the validated public-profile projection.
   // Firestore rules enforce ownership, email verification and field constraints.
-  await setDoc(doc(database, "profiles", uid), profile);
-  await setDoc(doc(database, "publicProfiles", uid), profile);
+  const batch = writeBatch(database);
+  batch.set(doc(database, "profiles", uid), profile);
+  batch.set(doc(database, "publicProfiles", uid), profile);
+  await batch.commit();
 }
