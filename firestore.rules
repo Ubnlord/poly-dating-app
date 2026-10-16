@@ -24,7 +24,160 @@ service cloud.firestore {
         && data.school.size() <= 160
         && data.imagePath is string
         && data.imagePath.size() <= 200
-        && (data.imagePath == '' || data.imagePath.matches('^profilePhotos/[A-Za-z0-9_-]+/avatar
+        && (data.imagePath == '' || data.imagePath.matches('^profilePhotos/[A-Za-z0-9_-]+/avatar        && data.verified == false
+        && data.createdAt is int
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('department' in data) || (data.department is string && data.department.size() <= 120))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 40))
+        && (!('state' in data) || (data.state is string && data.state.size() <= 80))
+        && (!('interests' in data) || (data.interests is list && data.interests.size() <= 30))
+        && (!('hobbies' in data) || (data.hobbies is string && data.hobbies.size() <= 500))
+        && (!('relationshipGoal' in data) || (data.relationshipGoal is string && data.relationshipGoal.size() <= 80))
+        && (!('religion' in data) || (data.religion is string && data.religion.size() <= 80))
+        && (!('languages' in data) || (data.languages is string && data.languages.size() <= 160));
+    }
+
+    match /profiles/{uid} {
+      // The owner can read their own profile, including legacy data that only they may repair.
+      // Discovery reads use the separate publicProfiles collection.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && (!validPublicProfile(resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      // Account deletion is a coordinated server-side operation; do not partially delete here.
+      allow delete: if false;
+    }
+
+
+    match /publicProfiles/{uid} {
+      // This collection is populated only by validated profile writes. Keeping it separate
+      // prevents discovery queries from exposing legacy/private fields in /profiles.
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+
+
+    match /reports/{reportId} {
+      // Reports are immutable client submissions. Review/status changes require trusted admin tooling.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reporterUid', 'targetUid', 'reason', 'details', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['reporterUid', 'targetUid', 'reason', 'status', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.reason in ['harassment', 'fake-profile', 'underage-concern', 'spam', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && (!('details' in request.resource.data) || (request.resource.data.details is string && request.resource.data.details.size() <= 1000));
+      allow read: if signedIn() && resource.data.reporterUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /users/{uid}/blocks/{targetUid} {
+      // Block lists are private; users can only manage their own block records.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && targetUid != uid
+        && request.resource.data.keys().hasOnly(['targetUid', 'createdAt'])
+        && request.resource.data.targetUid == targetUid
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+      allow update: if false;
+    }
+
+    // Other dating operations remain closed until their trusted data model and rules
+    // are implemented and tested. This prevents the prototype's old client writes
+    // from becoming an unintended production API.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}))
+        && data.verified == false
+        && data.createdAt is int
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('department' in data) || (data.department is string && data.department.size() <= 120))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 40))
+        && (!('state' in data) || (data.state is string && data.state.size() <= 80))
+        && (!('interests' in data) || (data.interests is list && data.interests.size() <= 30))
+        && (!('hobbies' in data) || (data.hobbies is string && data.hobbies.size() <= 500))
+        && (!('relationshipGoal' in data) || (data.relationshipGoal is string && data.relationshipGoal.size() <= 80))
+        && (!('religion' in data) || (data.religion is string && data.religion.size() <= 80))
+        && (!('languages' in data) || (data.languages is string && data.languages.size() <= 160));
+    }
+
+    match /profiles/{uid} {
+      // The owner can read their own profile, including legacy data that only they may repair.
+      // Discovery reads use the separate publicProfiles collection.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && (!validPublicProfile(resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      // Account deletion is a coordinated server-side operation; do not partially delete here.
+      allow delete: if false;
+    }
+
+
+    match /publicProfiles/{uid} {
+      // This collection is populated only by validated profile writes. Keeping it separate
+      // prevents discovery queries from exposing legacy/private fields in /profiles.
+      allow read: if signedIn();
+      allow create: if signedIn() && request.auth.uid == uid && validPublicProfile(request.resource.data);
+      allow update: if signedIn()
+        && request.auth.uid == uid
+        && validPublicProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+
+
+    match /reports/{reportId} {
+      // Reports are immutable client submissions. Review/status changes require trusted admin tooling.
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reporterUid', 'targetUid', 'reason', 'details', 'status', 'createdAt'])
+        && request.resource.data.keys().hasAll(['reporterUid', 'targetUid', 'reason', 'status', 'createdAt'])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.reason in ['harassment', 'fake-profile', 'underage-concern', 'spam', 'other']
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && (!('details' in request.resource.data) || (request.resource.data.details is string && request.resource.data.details.size() <= 1000));
+      allow read: if signedIn() && resource.data.reporterUid == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /users/{uid}/blocks/{targetUid} {
+      // Block lists are private; users can only manage their own block records.
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn()
+        && request.auth.uid == uid
+        && targetUid != uid
+        && request.resource.data.keys().hasOnly(['targetUid', 'createdAt'])
+        && request.resource.data.targetUid == targetUid
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && request.auth.uid == uid;
+      allow update: if false;
+    }
+
+    // Other dating operations remain closed until their trusted data model and rules
+    // are implemented and tested. This prevents the prototype's old client writes
+    // from becoming an unintended production API.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}))
         && data.verified == false
         && data.createdAt is int
         && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
