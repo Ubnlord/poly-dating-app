@@ -1,6 +1,7 @@
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
@@ -41,6 +42,13 @@ export async function logIn(email: string, password: string): Promise<User> {
     throw new Error("Please verify your email before signing in. Check your inbox for the verification link.");
   }
   return credential.user;
+}
+
+export async function resetPassword(email: string): Promise<void> {
+  const client = getAuthOrThrow();
+  const normalizedEmail = email.trim();
+  if (!normalizedEmail) throw new Error("Enter the email address for your account.");
+  await sendPasswordResetEmail(client, normalizedEmail);
 }
 
 export async function resendVerification(user: User): Promise<void> {
