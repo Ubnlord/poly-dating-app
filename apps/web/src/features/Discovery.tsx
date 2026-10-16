@@ -36,7 +36,12 @@ export default function Discovery({ user }: { user: User }) {
       try {
         // Rules allow only email-verified users to read the public projection.
         // No private profile documents or messages are queried here.
-        const snapshot = await getDocs(query(collection(db, "publicProfiles"), limit(60)));
+        const [snapshot, blockSnapshot] = await Promise.all([
+          getDocs(query(collection(db, "publicProfiles"), limit(60))),
+          getDocs(collection(db, "users", user.uid, "blocks")),
+        ]);
+        const blocked = blockSnapshot.docs.map(item => item.id);
+        if (active) setBlockedIds(blocked);
         const found = snapshot.docs
           .filter(item => item.id !== user.uid)
           .map(item => {
