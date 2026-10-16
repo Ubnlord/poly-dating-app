@@ -1,4 +1,4 @@
-export type AuthView = "login" | "signup" | "verify-email";
+export type AuthView = "login" | "signup" | "verify-email" | "reset-password";
 
 export interface UserProfile {
   uid: string;
