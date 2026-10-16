@@ -1,0 +1,39 @@
+name: Phase 1 Firebase security tests
+
+on:
+  pull_request:
+    paths:
+      - "firestore.rules"
+      - "tests/auth.emulator.test.js"
+      - "firebase.json"
+      - "package.json"
+      - "tests/**"
+      - "index.html"
+      - "docs/PHASE1_AGE_EMAIL_GATES.md"
+      - ".github/workflows/phase1-firebase-security.yml"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+      - name: Check embedded JavaScript syntax
+        run: |
+          node --input-type=module -e "import fs from 'node:fs'; const html=fs.readFileSync('index.html','utf8'); const scripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)].map(m=>m[1]).filter(s=>s.trim()); for (const script of scripts) new Function(script); console.log('Inline script syntax passed');"
+      - name: Test Firestore rules and Auth journey in isolated emulators
+        run: npm run test:emulators
