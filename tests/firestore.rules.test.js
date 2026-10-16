@@ -25,7 +25,7 @@ const profile = (overrides = {}) => ({
   relationshipGoal: "Serious relationship",
   religion: "Prefer not to say",
   languages: "English",
-  image: "https://example.com/avatar.png",
+  imagePath: "profilePhotos/alice/avatar",
   verified: false,
   createdAt: 1760000000000,
   ...overrides
