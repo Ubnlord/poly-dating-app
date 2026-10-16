@@ -1,5 +1,5 @@
 import { doc, getDoc, writeBatch } from "firebase/firestore";
-import { getBytes, ref, uploadBytes } from "firebase/storage";
+import { getBytes, getMetadata, ref, uploadBytes } from "firebase/storage";
 import { db, storage } from "./firebase";
 
 export interface ProfileDraft {
@@ -108,7 +108,8 @@ export async function saveMyProfile(uid: string, draft: ProfileDraft): Promise<v
 
 export async function loadProfilePhoto(path: string): Promise<string> {
   if (!storage || !path.startsWith("profilePhotos/")) return "";
-  const bytes = await getBytes(ref(storage, path), 5 * 1024 * 1024);
-  const contentType = path.endsWith("/avatar") ? "image/jpeg" : "application/octet-stream";
+  const objectRef = ref(storage, path);
+  const [bytes, metadata] = await Promise.all([getBytes(objectRef, 5 * 1024 * 1024), getMetadata(objectRef)]);
+  const contentType = metadata.contentType && /^image\/(jpeg|png|webp)$/.test(metadata.contentType) ? metadata.contentType : "application/octet-stream";
   return URL.createObjectURL(new Blob([bytes], { type: contentType }));
 }
