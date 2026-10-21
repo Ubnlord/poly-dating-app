@@ -513,7 +513,7 @@ if(!saved)saveProfiles();
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
 const user=localStorage.getItem('polyconnect_user');
 const myProfile=localStorage.getItem('polyconnect_myprofile');
-if(user){if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
+if(user){if(myProfile&&Number(JSON.parse(myProfile).age)>=18){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
 setupWizardInterests();
 setupReactionMenu();
 }
@@ -553,7 +553,7 @@ loginLocalAccount(email,pass);
 function loginLocalAccount(email,pass){
 const users=JSON.parse(localStorage.getItem('polyconnect_users')||'[]');
 const user=users.find(u=>u.email===email&&u.password===pass);
-if(user){localStorage.setItem('polyconnect_user',JSON.stringify(user));const mp=localStorage.getItem('polyconnect_myprofile');if(mp){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();showToast('Welcome back, '+user.name+'!');}
+if(user){localStorage.setItem('polyconnect_user',JSON.stringify(user));const mp=localStorage.getItem('polyconnect_myprofile');if(mp&&Number(JSON.parse(mp).age)>=18){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();showToast('Welcome back, '+user.name+'!');}
 else showToast('Invalid email or password','error');
 }
 
@@ -697,7 +697,7 @@ relationshipGoal:document.getElementById('wiz-goal').value,
 religion:document.getElementById('wiz-religion').value,
 languages:document.getElementById('wiz-languages').value,
 image:photo&&!photo.includes(window.location.href)?photo:'https://ui-avatars.com/api/?name='+encodeURIComponent(document.getElementById('wiz-name').value)+'&background=8b5cf6&color=fff&size=400',
-selfie:selfieDataUrl,verified:!!selfieDataUrl,createdAt:Date.now()
+selfie:selfieDataUrl,verified:false,verificationStatus:'unverified',createdAt:Date.now()
 };
 if(!Number.isInteger(myProfile.age)||myProfile.age<18){showToast('PolyConnect is only for adults aged 18 and over.','error');return;}
 if(firebaseReady()){
@@ -941,7 +941,7 @@ const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u
 function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blocked')||'[]').map(Number);}
 function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
 function recordLike(profileId){const likes=JSON.parse(localStorage.getItem('polyconnect_likes')||'[]');if(!likes.includes(profileId)){likes.push(profileId);localStorage.setItem('polyconnect_likes',JSON.stringify(likes));}}
-function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&(profile.likedMe||profile.relationshipGoal==='Study buddy'||profile.verified&&profileId%2===0));}
+function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&profile.likedMe===true);}
 function blockUser(profileId){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
 function reportUser(profileId,reason){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
 function unmatchUser(profileId,notify=true){let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
