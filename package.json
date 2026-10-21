@@ -1,0 +1,15 @@
+{
+  "name": "polyconnect-firebase-security-tests",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Emulator tests for PolyConnect Firebase security rules",
+  "scripts": {
+    "test:rules": "node --test tests/firestore.rules.test.js",
+    "test:emulators": "firebase emulators:exec --only firestore,storage \"npm run test:rules\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.10.0",
+    "firebase-tools": "^14.7.0"
+  }
+}
