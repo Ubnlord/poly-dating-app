@@ -1,0 +1,164 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    function adultProfile(uid) {
+      return exists(/databases/$(database)/documents/profiles/$(uid))
+        && get(/databases/$(database)/documents/profiles/$(uid)).data.age is int
+        && get(/databases/$(database)/documents/profiles/$(uid)).data.age >= 18;
+    }
+    function activeAdult() {
+      return signedIn()
+        && adultProfile(request.auth.uid)
+        && (!exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.suspended != true);
+    }
+    function notBlocked(uidA, uidB) {
+      return !exists(/databases/$(database)/documents/blocks/$(uidA + '_' + uidB))
+        && !exists(/databases/$(database)/documents/blocks/$(uidB + '_' + uidA));
+    }
+    function isConversationMember() {
+      return activeAdult()
+        && request.auth.uid in resource.data.memberIds
+        && resource.data.memberIds.size() == 2;
+    }
+    function isMatchedMember(conversationId) {
+      return activeAdult()
+        && exists(/databases/$(database)/documents/matches/$(conversationId))
+        && request.auth.uid in get(/databases/$(database)/documents/matches/$(conversationId)).data.memberIds
+        && get(/databases/$(database)/documents/matches/$(conversationId)).data.status == 'active'
+        && notBlocked(
+          get(/databases/$(database)/documents/matches/$(conversationId)).data.memberIds[0],
+          get(/databases/$(database)/documents/matches/$(conversationId)).data.memberIds[1]
+        );
+    }
+
+    // Private account metadata. Clients cannot grant themselves staff privileges.
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['createdAt', 'suspended'])
+        && request.resource.data.get('suspended', false) == false;
+      allow update, delete: if false;
+    }
+
+    // Only safe, public discovery fields are stored here. Keep email, reports,
+    // exact DOB, verification evidence, and moderation notes out of this document.
+    match /profiles/{uid} {
+      allow read: if signedIn() && (
+        request.auth.uid == uid ||
+        (activeAdult()
+          && resource.data.age is int && resource.data.age >= 18
+          && resource.data.discoveryEnabled == true
+          && resource.data.emailVerified == true
+          && notBlocked(request.auth.uid, uid))
+      );
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly([
+          'uid', 'name', 'age', 'gender', 'bio', 'school', 'department', 'level',
+          'state', 'interests', 'hobbies', 'relationshipGoal', 'religion',
+          'languages', 'imagePath', 'discoveryEnabled', 'emailVerified',
+          'verificationStatus', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.uid == uid
+        && request.resource.data.age is int && request.resource.data.age >= 18
+        && request.resource.data.age <= 120
+        && request.resource.data.discoveryEnabled is bool
+        && request.resource.data.emailVerified == request.auth.token.email_verified
+        && request.resource.data.verificationStatus == 'unverified';
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'age', 'gender', 'bio', 'school', 'department', 'level',
+          'state', 'interests', 'hobbies', 'relationshipGoal', 'religion',
+          'languages', 'imagePath', 'discoveryEnabled', 'updatedAt'
+        ])
+        && request.resource.data.age is int && request.resource.data.age >= 18
+        && request.resource.data.age <= 120;
+      allow delete: if false;
+    }
+
+    // Likes use deterministic actor_target document IDs. No client can create matches.
+    match /likes/{likeId} {
+      allow read: if activeAdult() && (
+        resource.data.fromUid == request.auth.uid ||
+        resource.data.toUid == request.auth.uid
+      );
+      allow create: if activeAdult()
+        && request.resource.data.keys().hasOnly(['fromUid', 'toUid', 'createdAt', 'kind'])
+        && request.resource.data.fromUid == request.auth.uid
+        && request.resource.data.toUid is string
+        && request.resource.data.toUid != request.auth.uid
+        && likeId == request.auth.uid + '_' + request.resource.data.toUid
+        && adultProfile(request.resource.data.toUid)
+        && notBlocked(request.auth.uid, request.resource.data.toUid)
+        && request.resource.data.kind in ['like', 'pass', 'superLike'];
+      allow update, delete: if false;
+    }
+
+    // Match creation is trusted-server-only: clients cannot forge mutual consent.
+    match /matches/{matchId} {
+      allow read: if activeAdult()
+        && request.auth.uid in resource.data.memberIds
+        && resource.data.status == 'active';
+      allow create, update, delete: if false;
+    }
+
+    // Conversations are created by a trusted server after validating mutual likes.
+    match /conversations/{conversationId} {
+      allow read: if isConversationMember()
+        && isMatchedMember(conversationId);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isMatchedMember(conversationId)
+          && request.auth.uid in get(/databases/$(database)/documents/matches/$(conversationId)).data.memberIds;
+        allow create: if isMatchedMember(conversationId)
+          && request.resource.data.keys().hasOnly(['senderUid', 'text', 'createdAt'])
+          && request.resource.data.senderUid == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000;
+        allow update, delete: if false;
+      }
+    }
+
+    // A user may block another adult; block records are immutable to clients.
+    // Use a trusted backend to process block/unmatch atomically and maintain audit logs.
+    match /blocks/{blockId} {
+      allow read: if activeAdult()
+        && (resource.data.blockerUid == request.auth.uid
+          || resource.data.blockedUid == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
+    // Users can submit reports, but only staff with a server-issued custom claim can read them.
+    match /reports/{reportId} {
+      allow create: if activeAdult()
+        && request.resource.data.keys().hasOnly([
+          'reporterUid', 'targetUid', 'reason', 'details', 'createdAt', 'status'
+        ])
+        && request.resource.data.reporterUid == request.auth.uid
+        && request.resource.data.targetUid is string
+        && request.resource.data.targetUid != request.auth.uid
+        && request.resource.data.reason in [
+          'harassment', 'spam', 'fake_profile', 'underage', 'inappropriate_content', 'other'
+        ]
+        && request.resource.data.details is string
+        && request.resource.data.details.size() <= 2000
+        && request.resource.data.status == 'open';
+      allow read: if signedIn() && request.auth.token.moderator == true;
+      allow update, delete: if false;
+    }
+
+    match /adminAudit/{auditId} {
+      allow read, write: if false;
+    }
+
+    // Explicit deny-by-default for every unlisted collection.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
