@@ -457,23 +457,38 @@ firebaseDb=firebase.firestore();
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user)return;
+if(!user.emailVerified){
+localStorage.removeItem('polyconnect_user');
+localStorage.removeItem('polyconnect_myprofile');
+showToast('Verify your email before using PolyConnect. Check your inbox for the verification link.','error');
+await firebaseAuth.signOut();
+return;
+}
+try{
+const profile=await loadFirebaseProfile(user.uid);
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
-await loadFirebaseProfile(user.uid);
-const myProfile=localStorage.getItem('polyconnect_myprofile');
-if(myProfile){showApp();updateHeaderAvatar();renderCards();renderConversations();}
-else showWizard();
+if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderCards();renderConversations();}
+else {localStorage.removeItem('polyconnect_myprofile');showWizard();}
+}catch(error){
+console.error('Could not load your Firebase profile:',error);
+showToast('Could not load your saved profile. Check your connection and try again.','error');
+showWizard();
+}
 });
 }
 
 async function loadFirebaseProfile(uid){
-if(!firebaseReady()||!uid)return;
+if(!firebaseReady()||!uid)throw new Error('Firebase is not ready.');
 const doc=await firebaseDb.collection('profiles').doc(uid).get();
-if(doc.exists)localStorage.setItem('polyconnect_myprofile',JSON.stringify(doc.data()));
+return doc.exists?doc.data():null;
 }
 
 async function saveFirebaseProfile(profile){
-if(!firebaseReady()||!firebaseAuth.currentUser)return;
-await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(profile,{merge:true});
+if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Please sign in to save your profile.');
+const safeProfile={...profile,uid:firebaseAuth.currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+delete safeProfile.selfie;
+if(typeof safeProfile.image==='string'&&safeProfile.image.startsWith('data:'))delete safeProfile.image;
+await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(safeProfile,{merge:true});
 }
 
 async function saveFirebaseMatch(profile){
@@ -513,7 +528,16 @@ if(firebaseReady()){
 try{
 const credential=await firebaseAuth.signInWithEmailAndPassword(email,pass);
 const user=credential.user;
+if(!user.emailVerified){
+try{await user.sendEmailVerification();}catch(verificationError){console.warn('Could not resend verification email:',verificationError);}
+await firebaseAuth.signOut();
+showToast('Please verify your email before logging in. We sent a verification link if possible.','error');
+return;
+}
+const profile=await loadFirebaseProfile(user.uid);
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
+if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderCards();renderConversations();}
+else {localStorage.removeItem('polyconnect_myprofile');showWizard();}
 showToast('Welcome back!');
 return;
 }catch(error){
@@ -552,8 +576,9 @@ if(firebaseReady()){
 try{
 const credential=await firebaseAuth.createUserWithEmailAndPassword(email,pass);
 await credential.user.updateProfile({displayName:name});
-localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,name,email}));
-showWizard();showToast('Account created! Complete your profile.');
+await credential.user.sendEmailVerification();
+await firebaseAuth.signOut();
+showToast('Account created. Verify your email using the link we sent, then log in.');
 return;
 }catch(error){
 console.warn('Firebase signup failed:',error);
@@ -655,7 +680,7 @@ document.getElementById('camera-placeholder').classList.remove('hidden');
 selfieDataUrl=null;
 }
 
-function finishWizard(){
+async function finishWizard(){
 const photo=document.getElementById('wizard-photo-preview').src;
 const myProfile={
 name:document.getElementById('wiz-name').value,
@@ -674,10 +699,19 @@ languages:document.getElementById('wiz-languages').value,
 image:photo&&!photo.includes(window.location.href)?photo:'https://ui-avatars.com/api/?name='+encodeURIComponent(document.getElementById('wiz-name').value)+'&background=8b5cf6&color=fff&size=400',
 selfie:selfieDataUrl,verified:!!selfieDataUrl,createdAt:Date.now()
 };
+if(!Number.isInteger(myProfile.age)||myProfile.age<18){showToast('PolyConnect is only for adults aged 18 and over.','error');return;}
+if(firebaseReady()){
+try{
+await saveFirebaseProfile(myProfile);
+}catch(error){
+console.error('Profile save failed:',error);
+showToast('Your profile was not saved. Check your connection and try again.','error');
+return;
+}
+}
 localStorage.setItem('polyconnect_myprofile',JSON.stringify(myProfile));
-saveFirebaseProfile(myProfile).catch(error=>showToast(error.message,'error'));
 showApp();updateHeaderAvatar();renderCards();renderConversations();
-showToast('Profile created! Welcome to PolyConnect.');
+showToast(firebaseReady()?'Profile saved to Firebase.':'Profile saved in local demo mode.');
 }
 
 function updateHeaderAvatar(){
