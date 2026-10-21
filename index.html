@@ -517,7 +517,10 @@ localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.d
 showToast('Welcome back!');
 return;
 }catch(error){
-console.warn('Firebase login failed, checking local demo accounts:',error);
+console.warn('Firebase login failed:',error);
+const message=error&&['auth/invalid-credential','auth/user-not-found','auth/wrong-password'].includes(error.code)?'Email or password is incorrect.':error&&error.code==='auth/too-many-requests'?'Too many attempts. Please wait and try again.':'Firebase login failed. Check your connection and try again.';
+showToast(message,'error');
+return;
 }
 }
 loginLocalAccount(email,pass);
@@ -553,8 +556,10 @@ localStorage.setItem('polyconnect_user',JSON.stringify({uid:credential.user.uid,
 showWizard();showToast('Account created! Complete your profile.');
 return;
 }catch(error){
-console.warn('Firebase signup failed, falling back to local demo account:',error);
-showToast('Firebase signup unavailable. Using local demo mode.','error');
+console.warn('Firebase signup failed:',error);
+const message=error&&error.code==='auth/email-already-in-use'?'That email already has an account. Try logging in.':error&&error.code==='auth/weak-password'?'Choose a stronger password.':error&&error.code==='auth/invalid-email'?'Enter a valid email address.':'Firebase could not create the account. Check your connection and Firebase configuration, then try again.';
+showToast(message,'error');
+return;
 }
 }
 createLocalAccount(name,email,pass);
