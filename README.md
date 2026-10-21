@@ -16,7 +16,7 @@ The existing single-page app includes a mix of browser-local demo features and F
 - 18+ declaration during sign up and password reset when Firebase Auth is available.
 - Profile onboarding with school, department, interests, relationship goals, photo upload, and optional local selfie check.
 - Discovery filters, likes, passes, super likes, and demo matching.
-- Demo conversations with emoji, image attachments, reactions, read-state UI, and simulated replies.
+- Demo conversations with emoji, image attachments, reactions, and read-state UI; simulated auto-replies are disabled so fake messages are not mistaken for real people.
 - Safety Center UI for reporting, blocking, unmatching, and chat actions.
 - Event-interest saving, profile editing, local data export, and local app-data deletion.
 
