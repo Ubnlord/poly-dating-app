@@ -1,0 +1,29 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedInVerifiedAdult() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && firestore.exists(/databases/(default)/documents/profiles/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.age is int
+        && firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.age >= 18;
+    }
+
+    // Profile photos: verified adults may read photos for discovery.
+    // Only the owner may upload/delete their own avatar, and only image files up to 5 MiB.
+    match /profilePhotos/{uid}/{fileName} {
+      allow read: if signedInVerifiedAdult();
+      allow create, update: if signedInVerifiedAdult()
+        && request.auth.uid == uid
+        && fileName == 'avatar'
+        && request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+      allow delete: if signedInVerifiedAdult() && request.auth.uid == uid;
+    }
+
+    // Deny every other object path by default.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
