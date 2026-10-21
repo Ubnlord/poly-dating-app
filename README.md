@@ -1,39 +1,44 @@
-# poly-dating-app
+# PolyConnect
 
-PolyConnect is a single-page prototype for a polytechnic student dating app.
+PolyConnect is a mobile-first dating app prototype for adults (18+) at Nigerian polytechnics, starting with Federal Polytechnic Oko, Anambra State.
 
-## Current free features
+## Project plan and architecture
 
-The app intentionally uses only browser features and Firebase web SDK integrations that can be used on a free-tier project or in local demo mode. It does **not** require a paid API, paid verification vendor, paid chat service, or paid media host.
+The complete product roadmap, proposed repository tree, data model, security/privacy requirements, test matrix, and beta acceptance criteria are documented in [docs/PRODUCT_PLAN_AND_ARCHITECTURE.md](docs/PRODUCT_PLAN_AND_ARCHITECTURE.md).
 
-Implemented prototype features include:
+That document describes the **target architecture**, not files or capabilities already implemented. The current app remains a single-page prototype; verify behavior in code and tests before treating any feature as production-ready.
 
-- Email/password sign up and login with a localStorage fallback.
-- Required 18+ safety consent during sign up, plus a Firebase password-reset link when Firebase Auth is available.
-- Profile onboarding with age, school, department, interests, relationship goals, photo upload, and optional selfie-based local verification.
-- Smart discovery with search, major, relationship goal, verification, gender, state, and age filters, compatibility notes, likes, passes, super likes, and undo.
-- Deterministic demo mutual matching rather than paid matching infrastructure.
-- Local demo conversations with emoji, image attachments, reactions, read-state UI, and simulated replies.
-- Safety Center with community rules, directly accessible profile-card reports, locally saved reports, blocked users, unblock controls, and chat actions for report, block, unmatch, and clear chat.
-- Event interest saving in local storage.
-- Prefilled profile editing, local data export, and local account/app-data deletion.
+## Current prototype capabilities
 
-## Firebase setup
+The existing single-page app includes a mix of browser-local demo features and Firebase web SDK integrations:
 
-PolyConnect is configured for the `poly-dating-app-5354c` Firebase web app in `index.html`. The page loads Firebase App, Authentication, Cloud Firestore, and Analytics from the Firebase JavaScript SDK CDN.
+- Email/password sign up and login, with a local demo fallback.
+- 18+ declaration during sign up and password reset when Firebase Auth is available.
+- Profile onboarding with school, department, interests, relationship goals, photo upload, and optional local selfie check.
+- Discovery filters, likes, passes, super likes, and demo matching.
+- Demo conversations with emoji, image attachments, reactions, read-state UI, and simulated replies.
+- Safety Center UI for reporting, blocking, unmatching, and chat actions.
+- Event-interest saving, profile editing, local data export, and local app-data deletion.
 
-To use the connected backend, make sure the Firebase project has:
+**Important:** local demo data is not shared across accounts/devices and does not provide production identity, matching, messaging, or moderation. UI controls alone do not enforce security.
 
-1. **Authentication** enabled with the Email/Password provider.
-2. A **Cloud Firestore** database for saved profiles and matches.
-3. Analytics enabled for the configured measurement ID.
+## Firebase configuration
 
-If the Firebase SDK cannot load, the app continues to use the local demo storage.
+The existing `index.html` configures the Firebase web app `poly-dating-app-5354c` and loads Firebase App, Authentication, Firestore, and Analytics SDKs from the CDN.
 
-## Still needed before production
+For connected-backend testing, verify that the intended Firebase project has:
+1. Email/Password authentication enabled.
+2. Cloud Firestore provisioned.
+3. Correct Firestore and Storage security rules.
+4. Any required indexes deployed.
+5. Analytics enabled only if desired and disclosed in the privacy notice.
 
-This remains a prototype. Before a real public launch, add Firestore security rules, real multi-user discovery and messaging, hosted image storage, human/admin moderation, formal privacy/terms pages, account deletion against the backend, and proper automated tests.
+Do not put service-account credentials, private keys, or other secrets in browser code or commit them to GitHub. Firebase web configuration is not a substitute for database rules.
+
+## Before a public beta
+
+The prototype must not be considered production-ready until real multi-user discovery and chat, reviewed Firestore/Storage rules, backend-backed reporting and moderation, reliable account deletion/export, privacy/terms, and automated functional/security tests are complete. Use Firebase Emulator Suite or an isolated test project first; do not test risky migrations against real member data.
 
 ## Deployment visibility check
 
-After deploying the latest version, the login screen and discovery screen should show a visible `free-upgrades-v3` build label and a "Latest free upgrades live" panel. If you do not see that label, the host is serving an older commit or a cached file. Signup should also continue in local demo mode if Firebase signup is unavailable.
+The existing login screen includes the `free-upgrades-v3` build label and a “Latest free upgrades live” panel. If those are missing after deployment, the host may be serving an older commit or cached page. This visual marker does not prove that security rules or backend flows are working.
