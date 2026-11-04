@@ -16,7 +16,7 @@ The existing single-page app includes a mix of browser-local demo features and F
 - 18+ declaration during sign up and password reset when Firebase Auth is available.
 - Profile onboarding with school, department, interests, relationship goals, and profile photo uploads to Firebase Storage (JPG/PNG/WebP, up to 5 MiB), subject to authenticated-adult Storage rules.
 - Optional selfie camera preview only; it is not identity or student verification.
-- Discovery filters, likes, passes, super likes, and demo matching.
+- Discovery filters, likes, passes, super likes, and demo matching UI are present, but no fictional sample members are shown to signed-in users while the shared discovery backend is incomplete.
 - Demo conversations with emoji, image attachments, reactions, and read-state UI; simulated auto-replies are disabled so fake messages are not mistaken for real people.
 - Safety Center UI for reporting, blocking, unmatching, and chat actions.
 - Event-interest saving, profile editing, local data export, and local app-data deletion.
