@@ -395,21 +395,44 @@ exports.listConversationMessages = onCall(async request => {
 exports.sendConversationMessage = onCall(async request => {
   const uid = requireVerifiedAdult(request);
   const { conversationId, text } = request.data || {};
+  if (typeof conversationId !== 'string' || !/^[a-f0-9]{64}$/.test(conversationId)) {
+    throw new HttpsError('invalid-argument', 'Invalid conversation.');
+  }
   if (typeof text !== 'string' || !text.trim() || text.trim().length > 2000) {
     throw new HttpsError('invalid-argument', 'Messages must contain 1 to 2,000 characters.');
   }
-  const { conversationRef } = await verifyActiveConversation(uid, conversationId);
-  const profile = await db.collection('profiles').doc(uid).get();
-  const account = await db.collection('users').doc(uid).get();
-  if (!profile.exists || !Number.isInteger(profile.data().age) || profile.data().age < 18 ||
-      profile.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
-    throw new HttpsError('permission-denied', 'This account cannot send messages.');
-  }
 
+  const matchRef = db.collection('matches').doc(conversationId);
+  const conversationRef = db.collection('conversations').doc(conversationId);
   const rateRef = db.collection('rateLimits').doc(uid + '_messages');
   const messageRef = conversationRef.collection('messages').doc();
+
   await db.runTransaction(async transaction => {
-    const rate = await transaction.get(rateRef);
+    const match = await transaction.get(matchRef);
+    if (!match.exists || match.data().status !== 'active' ||
+        !Array.isArray(match.data().memberIds) || !match.data().memberIds.includes(uid)) {
+      throw new HttpsError('permission-denied', 'You do not have access to this conversation.');
+    }
+    const otherUid = match.data().memberIds.find(memberId => memberId !== uid);
+    if (!otherUid) throw new HttpsError('permission-denied', 'Invalid conversation membership.');
+
+    const [conversation, forwardBlock, reverseBlock, profile, account, rate] = await Promise.all([
+      transaction.get(conversationRef),
+      transaction.get(db.collection('blocks').doc(uid + '_' + otherUid)),
+      transaction.get(db.collection('blocks').doc(otherUid + '_' + uid)),
+      transaction.get(db.collection('profiles').doc(uid)),
+      transaction.get(db.collection('users').doc(uid)),
+      transaction.get(rateRef)
+    ]);
+    if (!conversation.exists || conversation.data().status !== 'active' ||
+        forwardBlock.exists || reverseBlock.exists) {
+      throw new HttpsError('permission-denied', 'This conversation is no longer available.');
+    }
+    if (!profile.exists || !Number.isInteger(profile.data().age) || profile.data().age < 18 ||
+        profile.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+      throw new HttpsError('permission-denied', 'This account cannot send messages.');
+    }
+
     const now = Date.now();
     const previous = rate.exists ? rate.data() : {};
     const windowStart = Number(previous.windowStart || 0);
@@ -417,7 +440,11 @@ exports.sendConversationMessage = onCall(async request => {
     if (count >= 30) {
       throw new HttpsError('resource-exhausted', 'Message limit reached. Please wait before sending more.');
     }
-    transaction.set(rateRef, { windowStart: count ? windowStart : now, count: count + 1, updatedAt: FieldValue.serverTimestamp() });
+    transaction.set(rateRef, {
+      windowStart: count ? windowStart : now,
+      count: count + 1,
+      updatedAt: FieldValue.serverTimestamp()
+    });
     transaction.create(messageRef, {
       senderUid: uid,
       text: text.trim(),
