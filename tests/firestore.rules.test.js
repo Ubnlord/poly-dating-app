@@ -98,6 +98,20 @@ test('profile owner cannot write underage or privileged fields', async () => {
   }));
 });
 
+test('profile text fields are bounded and typed', async () => {
+  const db = verifiedUser('alice');
+  await assertFails(setDoc(doc(db, 'profiles/alice'), {
+    uid: 'alice', name: 'Alice', age: 21, school: 'Test Polytechnic',
+    department: 'Computing', bio: 'x'.repeat(501), interests: [],
+    discoveryEnabled: true, emailVerified: true, verificationStatus: 'unverified'
+  }));
+  await assertFails(setDoc(doc(db, 'profiles/alice'), {
+    uid: 'alice', name: 'Alice', age: 21, school: 'Test Polytechnic',
+    department: 'Computing', bio: '', interests: ['x'.repeat(501)],
+    discoveryEnabled: true, emailVerified: true, verificationStatus: 'unverified'
+  }));
+});
+
 test('clients cannot write likes, matches, or conversations directly', async () => {
   await seedProfile('alice');
   await seedProfile('bob');
@@ -166,7 +180,7 @@ test('profile photo uploads are denied without a verified adult profile', async 
 test('profile photo paths cannot point to another member avatar', async () => {
   const db = verifiedUser('alice');
   await assertFails(setDoc(doc(db, 'profiles/alice'), {
-    uid: 'alice', name: 'Alice', age: 21, discoveryEnabled: true,
+    uid: 'alice', name: 'Alice', age: 21, school: 'Test Polytechnic', department: 'Computing', discoveryEnabled: true,
     emailVerified: true, verificationStatus: 'unverified',
     imagePath: 'profilePhotos/bob/avatar'
   }));
