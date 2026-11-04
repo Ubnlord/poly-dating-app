@@ -481,3 +481,99 @@ exports.sendConversationMessage = onCall(async request => {
   });
   return { ok: true, messageId: messageRef.id };
 });
+
+
+function exportTimestamp(value) {
+  return value && typeof value.toDate === 'function' ? value.toDate().toISOString() : null;
+}
+
+exports.exportMyData = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const [profileDoc, accountDoc, sentLikes, receivedLikes, matches, reports, blocksMade, blocksReceived] =
+    await Promise.all([
+      db.collection('profiles').doc(uid).get(),
+      db.collection('users').doc(uid).get(),
+      db.collection('likes').where('fromUid', '==', uid).limit(500).get(),
+      db.collection('likes').where('toUid', '==', uid).limit(500).get(),
+      db.collection('matches').where('memberIds', 'array-contains', uid).limit(100).get(),
+      db.collection('reports').where('reporterUid', '==', uid).limit(200).get(),
+      db.collection('blocks').where('blockerUid', '==', uid).limit(200).get(),
+      db.collection('blocks').where('blockedUid', '==', uid).limit(200).get()
+    ]);
+  if (!profileDoc.exists) throw new HttpsError('failed-precondition', 'Create your profile before exporting app data.');
+
+  const conversations = await Promise.all(matches.docs.map(async matchDoc => {
+    const messageSnapshot = await db.collection('conversations').doc(matchDoc.id)
+      .collection('messages').orderBy('createdAt', 'desc').limit(200).get();
+    return {
+      conversationId: matchDoc.id,
+      status: matchDoc.data().status || 'unknown',
+      messages: messageSnapshot.docs.map(messageDoc => {
+        const message = messageDoc.data();
+        return {
+          senderUid: message.senderUid || '',
+          text: message.text || '',
+          createdAt: exportTimestamp(message.createdAt)
+        };
+      }).reverse()
+    };
+  }));
+
+  const mapLike = doc => ({
+    fromUid: doc.data().fromUid,
+    toUid: doc.data().toUid,
+    kind: doc.data().kind,
+    createdAt: exportTimestamp(doc.data().createdAt)
+  });
+  const mapBlock = doc => ({
+    blockerUid: doc.data().blockerUid,
+    blockedUid: doc.data().blockedUid,
+    createdAt: exportTimestamp(doc.data().createdAt)
+  });
+
+  return {
+    exportedAt: new Date().toISOString(),
+    account: {
+      uid,
+      email: request.auth.token.email || '',
+      createdAt: accountDoc.exists ? exportTimestamp(accountDoc.data().createdAt) : null,
+      suspended: accountDoc.exists ? accountDoc.data().suspended === true : false
+    },
+    profile: {
+      ...profileDoc.data(),
+      createdAt: exportTimestamp(profileDoc.data().createdAt),
+      updatedAt: exportTimestamp(profileDoc.data().updatedAt)
+    },
+    likes: {
+      sent: sentLikes.docs.map(mapLike),
+      received: receivedLikes.docs.map(mapLike)
+    },
+    matches: matches.docs.map(doc => ({
+      matchId: doc.id,
+      memberIds: doc.data().memberIds || [],
+      status: doc.data().status || 'unknown',
+      createdAt: exportTimestamp(doc.data().createdAt),
+      updatedAt: exportTimestamp(doc.data().updatedAt)
+    })),
+    conversations,
+    reportsFiled: reports.docs.map(doc => ({
+      reportId: doc.id,
+      targetUid: doc.data().targetUid,
+      reason: doc.data().reason,
+      details: doc.data().details || '',
+      status: doc.data().status || 'open',
+      createdAt: exportTimestamp(doc.data().createdAt)
+    })),
+    blocks: {
+      createdByMe: blocksMade.docs.map(mapBlock),
+      createdAgainstMe: blocksReceived.docs.map(mapBlock)
+    },
+    limits: {
+      likes: 500,
+      matches: 100,
+      reportsFiled: 200,
+      blocks: 200,
+      messagesPerConversation: 200
+    }
+  };
+});
