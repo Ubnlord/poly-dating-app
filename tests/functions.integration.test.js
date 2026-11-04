@@ -123,8 +123,8 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(firstLike.data.matched, false);
   const undone = await undoLastInteraction({ targetUid: bobUid });
   assert.equal(undone.data.hadInteraction, true);
-  const likesAfterUndo = await adminDb.collection('likes').where('fromUid', '==', aliceUid).where('toUid', '==', bobUid).get();
-  assert.equal(likesAfterUndo.size, 0);
+  const likesAfterUndo = await adminDb.collection('likes').where('fromUid', '==', aliceUid).get();
+  assert.equal(likesAfterUndo.docs.some(doc => doc.data().toUid === bobUid), false);
   const relike = await sendLike({ targetUid: bobUid, kind: 'like' });
   assert.equal(relike.data.matched, false);
 
