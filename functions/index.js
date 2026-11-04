@@ -162,7 +162,11 @@ exports.blockMember = onCall(async request => {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
     if (!target.exists) throw new HttpsError('not-found', 'Member profile not found.');
-    if (existingBlock.exists) return { ok: true, alreadyBlocked: true };
+    if (existingBlock.exists) {
+      if (ownLike.exists) transaction.delete(likeRef);
+      if (otherLike.exists) transaction.delete(reverseLikeRef);
+      return { ok: true, alreadyBlocked: true };
+    }
     if (!existingBlock.exists) {
       transaction.create(blockRef, {
         blockerUid: uid, blockedUid: targetUid, createdAt: FieldValue.serverTimestamp()
