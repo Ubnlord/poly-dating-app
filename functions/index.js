@@ -31,18 +31,6 @@ function validateTarget(targetUid, actorUid) {
   }
 }
 
-async function consumeDailyLimit(uid, limit, transaction) {
-  const day = new Date().toISOString().slice(0, 10);
-  const ref = db.collection('rateLimits').doc(uid + '_likes');
-  const snapshot = await transaction.get(ref);
-  const data = snapshot.exists ? snapshot.data() : {};
-  const count = data.day === day ? Number(data.count || 0) : 0;
-  if (count >= limit) {
-    throw new HttpsError('resource-exhausted', 'Daily interaction limit reached. Try again tomorrow.');
-  }
-  transaction.set(ref, { day, count: count + 1, updatedAt: FieldValue.serverTimestamp() });
-}
-
 exports.sendLike = onCall(async request => {
   const uid = requireVerifiedAdult(request);
   const { targetUid, kind = 'like' } = request.data || {};
