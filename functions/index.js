@@ -292,3 +292,138 @@ exports.unblockMember = onCall(async request => {
     return { ok: true, wasBlocked: block.exists };
   });
 });
+
+
+exports.listMyMatches = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const own = await db.collection('profiles').doc(uid).get();
+  const account = await db.collection('users').doc(uid).get();
+  if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
+      own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+    throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
+  }
+  const snapshot = await db.collection('matches')
+    .where('memberIds', 'array-contains', uid)
+    .limit(50)
+    .get();
+  const matches = await Promise.all(snapshot.docs.map(async matchDoc => {
+    const match = matchDoc.data();
+    if (match.status !== 'active' || !Array.isArray(match.memberIds) || match.memberIds.length !== 2) return null;
+    const otherUid = match.memberIds.find(memberId => memberId !== uid);
+    if (!otherUid) return null;
+    const [profileDoc, forwardBlock, reverseBlock] = await Promise.all([
+      db.collection('profiles').doc(otherUid).get(),
+      db.collection('blocks').doc(uid + '_' + otherUid).get(),
+      db.collection('blocks').doc(otherUid + '_' + uid).get()
+    ]);
+    if (!profileDoc.exists || forwardBlock.exists || reverseBlock.exists) return null;
+    const profile = profileDoc.data();
+    if (profile.emailVerified !== true || profile.discoveryEnabled !== true ||
+        !Number.isInteger(profile.age) || profile.age < 18) return null;
+    const latest = await db.collection('conversations').doc(matchDoc.id)
+      .collection('messages').orderBy('createdAt', 'desc').limit(1).get();
+    const last = latest.empty ? null : latest.docs[0].data();
+    return {
+      matchId: matchDoc.id,
+      uid: otherUid,
+      profile: {
+        name: profile.name || '',
+        age: profile.age,
+        gender: profile.gender || '',
+        bio: profile.bio || '',
+        school: profile.school || '',
+        department: profile.department || '',
+        level: profile.level || '',
+        state: profile.state || '',
+        interests: Array.isArray(profile.interests) ? profile.interests.slice(0, 20) : [],
+        relationshipGoal: profile.relationshipGoal || '',
+        imagePath: profile.imagePath || ''
+      },
+      lastMessage: last ? {
+        text: last.text || '',
+        senderUid: last.senderUid || '',
+        createdAt: last.createdAt && typeof last.createdAt.toMillis === 'function' ? last.createdAt.toMillis() : null
+      } : null
+    };
+  }));
+  return { matches: matches.filter(Boolean) };
+});
+
+async function verifyActiveConversation(uid, conversationId) {
+  if (typeof conversationId !== 'string' || !/^[a-f0-9]{64}$/.test(conversationId)) {
+    throw new HttpsError('invalid-argument', 'Invalid conversation.');
+  }
+  const matchRef = db.collection('matches').doc(conversationId);
+  const conversationRef = db.collection('conversations').doc(conversationId);
+  const [match, conversation] = await Promise.all([matchRef.get(), conversationRef.get()]);
+  if (!match.exists || !conversation.exists || match.data().status !== 'active' ||
+      conversation.data().status !== 'active' || !Array.isArray(match.data().memberIds) ||
+      !match.data().memberIds.includes(uid)) {
+    throw new HttpsError('permission-denied', 'You do not have access to this conversation.');
+  }
+  const otherUid = match.data().memberIds.find(memberId => memberId !== uid);
+  if (!otherUid) throw new HttpsError('permission-denied', 'Invalid conversation membership.');
+  const [forwardBlock, reverseBlock] = await Promise.all([
+    db.collection('blocks').doc(uid + '_' + otherUid).get(),
+    db.collection('blocks').doc(otherUid + '_' + uid).get()
+  ]);
+  if (forwardBlock.exists || reverseBlock.exists) {
+    throw new HttpsError('permission-denied', 'This conversation is no longer available.');
+  }
+  return { matchRef, conversationRef, otherUid };
+}
+
+exports.listConversationMessages = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const { conversationId } = request.data || {};
+  const { conversationRef } = await verifyActiveConversation(uid, conversationId);
+  const snapshot = await conversationRef.collection('messages')
+    .orderBy('createdAt', 'desc').limit(50).get();
+  const messages = snapshot.docs.map(doc => {
+    const message = doc.data();
+    return {
+      id: doc.id,
+      senderUid: message.senderUid,
+      text: message.text,
+      createdAt: message.createdAt && typeof message.createdAt.toMillis === 'function'
+        ? message.createdAt.toMillis() : null
+    };
+  }).reverse();
+  return { messages };
+});
+
+exports.sendConversationMessage = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const { conversationId, text } = request.data || {};
+  if (typeof text !== 'string' || !text.trim() || text.trim().length > 2000) {
+    throw new HttpsError('invalid-argument', 'Messages must contain 1 to 2,000 characters.');
+  }
+  const { conversationRef } = await verifyActiveConversation(uid, conversationId);
+  const profile = await db.collection('profiles').doc(uid).get();
+  const account = await db.collection('users').doc(uid).get();
+  if (!profile.exists || !Number.isInteger(profile.data().age) || profile.data().age < 18 ||
+      profile.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+    throw new HttpsError('permission-denied', 'This account cannot send messages.');
+  }
+
+  const rateRef = db.collection('rateLimits').doc(uid + '_messages');
+  const messageRef = conversationRef.collection('messages').doc();
+  await db.runTransaction(async transaction => {
+    const rate = await transaction.get(rateRef);
+    const now = Date.now();
+    const previous = rate.exists ? rate.data() : {};
+    const windowStart = Number(previous.windowStart || 0);
+    const count = now - windowStart < 10 * 60 * 1000 ? Number(previous.count || 0) : 0;
+    if (count >= 30) {
+      throw new HttpsError('resource-exhausted', 'Message limit reached. Please wait before sending more.');
+    }
+    transaction.set(rateRef, { windowStart: count ? windowStart : now, count: count + 1, updatedAt: FieldValue.serverTimestamp() });
+    transaction.create(messageRef, {
+      senderUid: uid,
+      text: text.trim(),
+      createdAt: FieldValue.serverTimestamp()
+    });
+    transaction.update(conversationRef, { lastMessageAt: FieldValue.serverTimestamp() });
+  });
+  return { ok: true, messageId: messageRef.id };
+});
