@@ -1207,7 +1207,19 @@ selectedMsgId=msgIndex;
 
 function addReaction(){document.getElementById('reaction-menu').classList.add('hidden');showToast('Message reactions are not enabled yet.','error');}
 
-function showChatMenu(){if(!currentChatProfileId)return;const action=prompt('Type report, block, or unmatch');if(!action)return;const a=action.toLowerCase();if(a==='report'){const reason=prompt('Reason for report?')||'Safety concern';reportUser(currentChatProfileId,reason);}else if(a==='block')blockUser(currentChatProfileId);else if(a==='unmatch')showToast('Use Block to end this conversation. Dedicated unmatching is coming next.');}
+async function unmatchMemberUI(profileId){
+const id=String(profileId);
+if(!functionsReady()){showToast('Secure unmatching is unavailable.','error');return;}
+try{
+await firebaseFunctions.httpsCallable('unmatchMember')({targetUid:id});
+unmatchUser(id,false);
+closeChat();
+await loadMyMatches();
+showToast('Match ended. Both members must like each other again to reconnect.');
+}catch(error){console.error('Unmatch failed:',error);showToast(error.message||'Could not end this match.','error');}
+}
+
+function showChatMenu(){if(!currentChatProfileId)return;const action=prompt('Type report, block, or unmatch');if(!action)return;const a=action.toLowerCase();if(a==='report'){const reason=prompt('Reason for report?')||'Safety concern';reportUser(currentChatProfileId,reason);}else if(a==='block')blockUser(currentChatProfileId);else if(a==='unmatch')unmatchMemberUI(currentChatProfileId);}
 
 function joinEvent(name,btn){const joined=JSON.parse(localStorage.getItem('polyconnect_events')||'[]');if(!joined.includes(name))joined.push(name);localStorage.setItem('polyconnect_events',JSON.stringify(joined));if(btn)btn.textContent='Joined';showToast('Event saved');}
 
