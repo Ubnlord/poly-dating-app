@@ -16,6 +16,8 @@ let auth;
 let functions;
 let aliceUid;
 let bobUid;
+let aliceMember;
+let bobMember;
 
 async function createVerifiedMember(label) {
   const email = label + '-' + crypto.randomUUID() + '@example.test';
@@ -58,11 +60,11 @@ before(async () => {
   functions = getFunctions(app, 'us-central1');
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
 
-  const alice = await createVerifiedMember('Alice');
-  const bob = await createVerifiedMember('Bob');
-  aliceUid = alice.uid;
-  bobUid = bob.uid;
-  await signIn(alice);
+  aliceMember = await createVerifiedMember('Alice');
+  bobMember = await createVerifiedMember('Bob');
+  aliceUid = aliceMember.uid;
+  bobUid = bobMember.uid;
+  await signIn(aliceMember);
 });
 
 after(async () => {
@@ -106,7 +108,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(firstLike.data.matched, false);
 
   await signOut(auth);
-  await signIn(bob);
+  await signIn(bobMember);
 
   const reciprocalLike = await sendLike({ targetUid: aliceUid, kind: 'superLike' });
   assert.equal(reciprocalLike.data.matched, true);
@@ -119,7 +121,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.deepEqual(matchSnapshot.data().memberIds.slice().sort(), [aliceUid, bobUid].sort());
 
   await signOut(auth);
-  await signIn(alice);
+  await signIn(aliceMember);
 
   const report = await submitSafetyReport({
     targetUid: bobUid,
