@@ -1118,32 +1118,26 @@ await renderMessages();
 
 function closeChat(){document.getElementById('chat-screen').classList.add('hidden');currentChatId=null;currentChatProfileId=null;document.getElementById('emoji-picker').classList.add('hidden');}
 
-function renderMessages(){
+async function renderMessages(){
 const area=document.getElementById('messages-area');
-if(!currentChatId)return;
-const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');
-const chatMsgs=msgs[currentChatId]||[];
-const myProfile=JSON.parse(localStorage.getItem('polyconnect_myprofile')||'{}');
-const profile=profiles.find(p=>p.id===currentChatId);
-
-if(chatMsgs.length===0){
-area.innerHTML=`<div class="text-center py-10"><div class="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-2xl"><i class="fas fa-comment-dots"></i></div><p class="text-sm text-gray-500 dark:text-gray-400">Start a conversation with ${profile?profile.name:''}!</p></div>`;
+if(!currentChatId||!functionsReady())return;
+area.innerHTML='<p class="text-center text-gray-400 py-8">Loading messages…</p>';
+try{
+const response=await firebaseFunctions.httpsCallable('listConversationMessages')({conversationId:currentChatId});
+const messages=Array.isArray(response.data.messages)?response.data.messages:[];
+const profile=profiles.find(p=>String(p.id)===String(currentChatProfileId));
+if(!messages.length){
+area.innerHTML=`<div class="text-center py-10"><div class="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-2xl"><i class="fas fa-comment-dots"></i></div><p class="text-sm text-gray-500 dark:text-gray-400">Start a conversation with ${escapeHtml(profile?profile.name:'your match')}.</p></div>`;
 }else{
-area.innerHTML=chatMsgs.map((m,i)=>{
-const isMe=m.sender==='me';
-const reactions=m.reactions?m.reactions.map(r=>`<span class="text-xs bg-white dark:bg-gray-700 rounded-full px-1.5 py-0.5 shadow-sm">${r}</span>`).join(''):'';
-const readReceipt=isMe&&m.read?`<span class="text-[10px] text-blue-400 ml-1"><i class="fas fa-check-double"></i></span>`:isMe?`<span class="text-[10px] text-gray-400 ml-1"><i class="fas fa-check"></i></span>`:'';
-const imgContent=m.image?`<img src="${m.image}" class="chat-img mb-1" onclick="window.open('${m.image}')">`:'';
-const textContent=m.text?`<p>${m.text}</p>`:'';
-return`<div class="flex ${isMe?'justify-end':'justify-start'} mb-1" onlongpress="showReactionMenu(event,${i})">
-<div class="msg-bubble ${isMe?'bg-purple-600 text-white rounded-2xl rounded-tr-sm':'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-2xl rounded-tl-sm'} px-4 py-2.5 text-sm relative" oncontextmenu="event.preventDefault();showReactionMenu(event,${i})">
-${imgContent}${textContent}
-<div class="flex items-center justify-end gap-1 mt-1">${reactions?`<div class="flex gap-1 mr-2">${reactions}</div>`:''}<span class="text-[10px] opacity-60">${m.time}</span>${readReceipt}</div>
-</div>
-</div>`;
+const myUid=firebaseAuth.currentUser.uid;
+area.innerHTML=messages.map(message=>{
+const isMe=message.senderUid===myUid;
+const time=message.createdAt?new Date(message.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+return `<div class="flex ${isMe?'justify-end':'justify-start'} mb-1"><div class="msg-bubble ${isMe?'bg-purple-600 text-white rounded-2xl rounded-tr-sm':'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-2xl rounded-tl-sm'} px-4 py-2.5 text-sm relative"><p>${escapeHtml(message.text)}</p><div class="flex items-center justify-end gap-1 mt-1"><span class="text-[10px] opacity-60">${escapeHtml(time)}</span></div></div></div>`;
 }).join('');
 }
 area.scrollTop=area.scrollHeight;
+}catch(error){console.error('Message load failed:',error);area.innerHTML='<p class="text-center text-red-400 py-8">Could not load messages. Please try again.</p>';showToast('Could not load this conversation.','error');}
 }
 
 function sendMessage(){
