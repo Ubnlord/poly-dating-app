@@ -484,7 +484,7 @@ showWizard();
 }
 
 async function loadDiscoveryProfiles(reset=true){
-if(!functionsReady()){profiles=[];renderCards();return;}
+if(!functionsReady()){profiles=[];renderCards();const button=document.getElementById('load-more-profiles');if(button)button.classList.add('hidden');return;}
 if(discoveryLoading)return;
 if(reset){discoveryCursor=null;discoveryHasMore=true;profiles=[];}
 if(!discoveryHasMore){renderCards();return;}
