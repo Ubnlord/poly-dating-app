@@ -113,6 +113,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const exportMyData = httpsCallable(functions, 'exportMyData');
   const listMyBlocks = httpsCallable(functions, 'listMyBlocks');
   const unmatchMember = httpsCallable(functions, 'unmatchMember');
+  const undoLastInteraction = httpsCallable(functions, 'undoLastInteraction');
 
   const firstPage = await discover({ limit: 20 });
   assert.ok(firstPage.data.profiles.some(profile => profile.uid === bobUid));
@@ -120,6 +121,12 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
 
   const firstLike = await sendLike({ targetUid: bobUid, kind: 'like' });
   assert.equal(firstLike.data.matched, false);
+  const undone = await undoLastInteraction({ targetUid: bobUid });
+  assert.equal(undone.data.hadInteraction, true);
+  const likesAfterUndo = await adminDb.collection('likes').where('fromUid', '==', aliceUid).where('toUid', '==', bobUid).get();
+  assert.equal(likesAfterUndo.size, 0);
+  const relike = await sendLike({ targetUid: bobUid, kind: 'like' });
+  assert.equal(relike.data.matched, false);
 
   await signOut(auth);
   await signIn(bobMember);
