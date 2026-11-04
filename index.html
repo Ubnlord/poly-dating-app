@@ -447,7 +447,7 @@ measurementId:"G-TD810WXVH8"
 };
 
 let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseStorage=null,firebaseFunctions=null,firebaseAnalytics=null;
-let discoveryCursor=null,discoveryHasMore=true,discoveryLoading=false;
+let discoveryCursor=null,discoveryHasMore=true,discoveryLoading=false,messageUnsubscribe=null;
 const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb&&firebaseStorage);
 const functionsReady=()=>Boolean(firebaseFunctions&&firebaseAuth&&firebaseAuth.currentUser&&firebaseAuth.currentUser.emailVerified);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
@@ -1118,28 +1118,33 @@ document.getElementById('chat-screen').classList.remove('hidden');
 await renderMessages();
 }
 
-function closeChat(){document.getElementById('chat-screen').classList.add('hidden');currentChatId=null;currentChatProfileId=null;document.getElementById('emoji-picker').classList.add('hidden');}
+function closeChat(){if(messageUnsubscribe){messageUnsubscribe();messageUnsubscribe=null;}document.getElementById('chat-screen').classList.add('hidden');currentChatId=null;currentChatProfileId=null;document.getElementById('emoji-picker').classList.add('hidden');}
 
-async function renderMessages(){
+function renderMessages(){
 const area=document.getElementById('messages-area');
 if(!currentChatId||!functionsReady())return;
+if(messageUnsubscribe){messageUnsubscribe();messageUnsubscribe=null;}
 area.innerHTML='<p class="text-center text-gray-400 py-8">Loading messages…</p>';
-try{
-const response=await firebaseFunctions.httpsCallable('listConversationMessages')({conversationId:currentChatId});
-const messages=Array.isArray(response.data.messages)?response.data.messages:[];
 const profile=profiles.find(p=>String(p.id)===String(currentChatProfileId));
+const query=firebaseDb.collection('conversations').doc(currentChatId).collection('messages').orderBy('createdAt','asc').limitToLast(50);
+messageUnsubscribe=query.onSnapshot(snapshot=>{
+const messages=snapshot.docs.map(doc=>doc.data());
 if(!messages.length){
 area.innerHTML=`<div class="text-center py-10"><div class="w-16 h-16 mx-auto mb-3 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-2xl"><i class="fas fa-comment-dots"></i></div><p class="text-sm text-gray-500 dark:text-gray-400">Start a conversation with ${escapeHtml(profile?profile.name:'your match')}.</p></div>`;
 }else{
 const myUid=firebaseAuth.currentUser.uid;
 area.innerHTML=messages.map(message=>{
 const isMe=message.senderUid===myUid;
-const time=message.createdAt?new Date(message.createdAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
+const time=message.createdAt&&message.createdAt.toDate?message.createdAt.toDate().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'';
 return `<div class="flex ${isMe?'justify-end':'justify-start'} mb-1"><div class="msg-bubble ${isMe?'bg-purple-600 text-white rounded-2xl rounded-tr-sm':'bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-2xl rounded-tl-sm'} px-4 py-2.5 text-sm relative"><p>${escapeHtml(message.text)}</p><div class="flex items-center justify-end gap-1 mt-1"><span class="text-[10px] opacity-60">${escapeHtml(time)}</span></div></div></div>`;
 }).join('');
 }
 area.scrollTop=area.scrollHeight;
-}catch(error){console.error('Message load failed:',error);area.innerHTML='<p class="text-center text-red-400 py-8">Could not load messages. Please try again.</p>';showToast('Could not load this conversation.','error');}
+},error=>{
+console.error('Message listener failed:',error);
+area.innerHTML='<p class="text-center text-red-400 py-8">This conversation is no longer available.</p>';
+showToast('Could not load this conversation.','error');
+});
 }
 
 async function sendMessage(){
@@ -1150,7 +1155,6 @@ if(!functionsReady()){showToast('Secure messaging is unavailable.','error');retu
 try{
 await firebaseFunctions.httpsCallable('sendConversationMessage')({conversationId:currentChatId,text});
 input.value='';
-await renderMessages();
 await loadMyMatches();
 }catch(error){console.error('Message send failed:',error);showToast(error.message||'Could not send message.','error');}
 }
