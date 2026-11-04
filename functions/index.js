@@ -140,8 +140,8 @@ exports.blockMember = onCall(async request => {
   const { targetUid } = request.data || {};
   validateTarget(targetUid, uid);
   const blockRef = db.collection('blocks').doc(uid + '_' + targetUid);
-  const likeRef = db.collection('likes').doc(uid + '_' + targetUid);
-  const reverseLikeRef = db.collection('likes').doc(targetUid + '_' + uid);
+  const likeRef = db.collection('likes').doc(likeDocumentId(uid, targetUid));
+  const reverseLikeRef = db.collection('likes').doc(likeDocumentId(targetUid, uid));
   const targetRef = db.collection('profiles').doc(targetUid);
   const matchId = matchDocumentId(uid, targetUid);
   const matchRef = db.collection('matches').doc(matchId);
