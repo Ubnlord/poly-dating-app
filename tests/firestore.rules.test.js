@@ -94,9 +94,13 @@ test('profile owner cannot write underage or privileged fields', async () => {
   }));
 });
 
-test('users cannot forge matches or conversations', async () => {
+test('clients cannot write likes, matches, or conversations directly', async () => {
   await seedProfile('alice');
+  await seedProfile('bob');
   const db = verifiedUser('alice');
+  await assertFails(setDoc(doc(db, 'likes/alice_bob'), {
+    fromUid: 'alice', toUid: 'bob', kind: 'like', createdAt: new Date()
+  }));
   await assertFails(setDoc(doc(db, 'matches/alice_bob'), {
     memberIds: ['alice', 'bob'], status: 'active'
   }));
@@ -105,10 +109,10 @@ test('users cannot forge matches or conversations', async () => {
   }));
 });
 
-test('only verified adults can submit constrained reports; clients cannot read them', async () => {
+test('clients cannot create or read reports directly', async () => {
   await seedProfile('alice');
   const db = verifiedUser('alice');
-  await assertSucceeds(setDoc(doc(db, 'reports/report1'), {
+  await assertFails(setDoc(doc(db, 'reports/report1'), {
     reporterUid: 'alice', targetUid: 'bob', reason: 'harassment',
     details: 'Test report', createdAt: new Date(), status: 'open'
   }));
