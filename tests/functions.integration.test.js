@@ -73,7 +73,7 @@ after(async () => {
     if (!uid) continue;
     const queries = [
       ['likes', 'fromUid'], ['matches', 'memberIds'], ['conversations', 'memberIds'],
-      ['reports', 'reporterUid'], ['blocks', 'blockerUid']
+      ['reports', 'reporterUid'], ['blocks', 'blockerUid'], ['adminAudit', 'actorUid']
     ];
     for (const [collection, field] of queries) {
       const query = field === 'memberIds'
