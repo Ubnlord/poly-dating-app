@@ -472,7 +472,7 @@ return;
 try{
 const profile=await loadFirebaseProfile(user.uid);
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
-if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderCards();renderConversations();}
+if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderConversations();await loadDiscoveryProfiles(true);}
 else {localStorage.removeItem('polyconnect_myprofile');showWizard();}
 }catch(error){
 console.error('Could not load your Firebase profile:',error);
@@ -757,8 +757,8 @@ return;
 }
 }
 localStorage.setItem('polyconnect_myprofile',JSON.stringify(myProfile));
-showApp();updateHeaderAvatar();renderCards();renderConversations();
-showToast(firebaseReady()?'Profile saved to Firebase.':'Profile saved in local demo mode.');
+showApp();updateHeaderAvatar();renderConversations();await loadDiscoveryProfiles(true);
+showToast('Profile saved securely.');
 }
 
 function updateHeaderAvatar(){
