@@ -5,10 +5,11 @@
   "description": "Emulator tests for PolyConnect Firebase security rules",
   "scripts": {
     "test:rules": "node --test tests/firestore.rules.test.js",
-    "test:emulators": "firebase emulators:exec --project polyconnect-rules-test --only firestore,storage,functions \"npm run test:rules\"",
+    "test:emulators": "firebase emulators:exec --project polyconnect-rules-test --only auth,firestore,storage,functions \"npm run test:rules && npm run test:functions\"",
     "test:syntax": "node scripts/check-inline-js.js",
     "test": "npm run test:syntax && npm run check:functions && npm run test:emulators",
-    "check:functions": "npm --prefix functions run check"
+    "check:functions": "npm --prefix functions run check",
+    "test:functions": "node --test tests/functions.integration.test.js"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
