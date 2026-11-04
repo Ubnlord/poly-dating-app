@@ -135,17 +135,21 @@ exports.blockMember = onCall(async request => {
   const { targetUid } = request.data || {};
   validateTarget(targetUid, uid);
   const blockRef = db.collection('blocks').doc(uid + '_' + targetUid);
+  const likeRef = db.collection('likes').doc(uid + '_' + targetUid);
+  const reverseLikeRef = db.collection('likes').doc(targetUid + '_' + uid);
   const targetRef = db.collection('profiles').doc(targetUid);
   const matchId = matchDocumentId(uid, targetUid);
   const matchRef = db.collection('matches').doc(matchId);
   const conversationRef = db.collection('conversations').doc(matchId);
   const auditRef = db.collection('adminAudit').doc();
 
-  return db.runTransaction(async transaction => {
+  const result = await db.runTransaction(async transaction => {
     const own = await transaction.get(db.collection('profiles').doc(uid));
     const account = await transaction.get(db.collection('users').doc(uid));
     const target = await transaction.get(targetRef);
     const existingBlock = await transaction.get(blockRef);
+    const ownLike = await transaction.get(likeRef);
+    const otherLike = await transaction.get(reverseLikeRef);
     const match = await transaction.get(matchRef);
     const conversation = await transaction.get(conversationRef);
     if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
@@ -158,6 +162,8 @@ exports.blockMember = onCall(async request => {
         blockerUid: uid, blockedUid: targetUid, createdAt: FieldValue.serverTimestamp()
       });
     }
+    if (ownLike.exists) transaction.delete(likeRef);
+    if (otherLike.exists) transaction.delete(reverseLikeRef);
     if (match.exists && match.data().status === 'active') {
       transaction.update(matchRef, { status: 'blocked', updatedAt: FieldValue.serverTimestamp() });
     }
@@ -169,6 +175,8 @@ exports.blockMember = onCall(async request => {
     });
     return { ok: true, alreadyBlocked: existingBlock.exists };
   });
+  await db.recursiveDelete(conversationRef.collection('messages'));
+  return result;
 });
 
 exports.submitSafetyReport = onCall(async request => {
