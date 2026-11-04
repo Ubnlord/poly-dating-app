@@ -1171,19 +1171,7 @@ showToast('New message received!');
 }
 }
 
-function handleChatImage(e){
-const file=e.target.files[0];if(!file||!currentChatId)return;
-const r=new FileReader();
-r.onload=(ev)=>{
-const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');
-if(!msgs[currentChatId])msgs[currentChatId]=[];
-msgs[currentChatId].push({sender:'me',image:ev.target.result,time:formatTime(),read:false,reactions:[]});
-localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));
-renderMessages();renderConversations();
-// No simulated reply: this prototype does not connect to a real conversation partner.
-};
-r.readAsDataURL(file);
-}
+function handleChatImage(e){if(e&&e.target)e.target.value='';showToast('Photo messaging is not enabled yet. Text messages are securely stored.','error');}
 
 function toggleEmojiPicker(){
 document.getElementById('emoji-picker').classList.toggle('hidden');
@@ -1210,20 +1198,9 @@ menu.classList.remove('hidden');
 selectedMsgId=msgIndex;
 }
 
-function addReaction(emoji){
-if(selectedMsgId===null||!currentChatId)return;
-const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');
-if(msgs[currentChatId]&&msgs[currentChatId][selectedMsgId]){
-if(!msgs[currentChatId][selectedMsgId].reactions)msgs[currentChatId][selectedMsgId].reactions=[];
-if(!msgs[currentChatId][selectedMsgId].reactions.includes(emoji))msgs[currentChatId][selectedMsgId].reactions.push(emoji);
-localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));
-renderMessages();
-}
-document.getElementById('reaction-menu').classList.add('hidden');
-selectedMsgId=null;
-}
+function addReaction(){document.getElementById('reaction-menu').classList.add('hidden');showToast('Message reactions are not enabled yet.','error');}
 
-function showChatMenu(){if(!currentChatId)return;const action=prompt('Type report, block, unmatch, or clear');if(!action)return;const a=action.toLowerCase();if(a==='report'){const reason=prompt('Reason for report?')||'Safety concern';reportUser(currentChatId,reason);}else if(a==='block')blockUser(currentChatId);else if(a==='unmatch')unmatchUser(currentChatId);else if(a==='clear'){const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[currentChatId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderMessages();renderConversations();showToast('Chat cleared');}}
+function showChatMenu(){if(!currentChatProfileId)return;const action=prompt('Type report, block, or unmatch');if(!action)return;const a=action.toLowerCase();if(a==='report'){const reason=prompt('Reason for report?')||'Safety concern';reportUser(currentChatProfileId,reason);}else if(a==='block')blockUser(currentChatProfileId);else if(a==='unmatch')showToast('Use Block to end this conversation. Dedicated unmatching is coming next.');}
 
 function joinEvent(name,btn){const joined=JSON.parse(localStorage.getItem('polyconnect_events')||'[]');if(!joined.includes(name))joined.push(name);localStorage.setItem('polyconnect_events',JSON.stringify(joined));if(btn)btn.textContent='Joined';showToast('Event saved');}
 
