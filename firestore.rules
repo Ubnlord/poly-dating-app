@@ -4,6 +4,27 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null && request.auth.token.email_verified == true;
     }
+    function validProfileFields(data, requireCore) {
+      return (!requireCore || (
+          data.name is string && data.name.size() > 0 && data.name.size() <= 80
+          && data.school is string && data.school.size() > 0 && data.school.size() <= 120
+          && data.department is string && data.department.size() > 0 && data.department.size() <= 120
+        ))
+        && (!('name' in data) || (data.name is string && data.name.size() <= 80))
+        && (!('gender' in data) || (data.gender is string && data.gender.size() <= 40))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 500))
+        && (!('school' in data) || (data.school is string && data.school.size() <= 120))
+        && (!('department' in data) || (data.department is string && data.department.size() <= 120))
+        && (!('level' in data) || (data.level is string && data.level.size() <= 40))
+        && (!('state' in data) || (data.state is string && data.state.size() <= 80))
+        && (!('interests' in data) || (data.interests is list && data.interests.size() <= 20))
+        && (!('hobbies' in data) || (data.hobbies is string && data.hobbies.size() <= 300))
+        && (!('relationshipGoal' in data) || (data.relationshipGoal is string && data.relationshipGoal.size() <= 80))
+        && (!('religion' in data) || (data.religion is string && data.religion.size() <= 80))
+        && (!('languages' in data) || (data.languages is string && data.languages.size() <= 120))
+        && (!('discoveryEnabled' in data) || data.discoveryEnabled is bool);
+    }
+
     function adultProfile(uid) {
       return exists(/databases/$(database)/documents/profiles/$(uid))
         && get(/databases/$(database)/documents/profiles/$(uid)).data.age is int
@@ -63,6 +84,8 @@ service cloud.firestore {
           'verificationStatus', 'createdAt', 'updatedAt'
         ])
         && request.resource.data.uid == uid
+        && validProfileFields(request.resource.data, true)
+        && validProfileFields(request.resource.data, false)
         && request.resource.data.age is int && request.resource.data.age >= 18
         && request.resource.data.age <= 120
         && request.resource.data.discoveryEnabled is bool
