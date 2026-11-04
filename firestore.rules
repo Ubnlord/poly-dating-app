@@ -85,16 +85,8 @@ service cloud.firestore {
         resource.data.fromUid == request.auth.uid ||
         resource.data.toUid == request.auth.uid
       );
-      allow create: if activeAdult()
-        && request.resource.data.keys().hasOnly(['fromUid', 'toUid', 'createdAt', 'kind'])
-        && request.resource.data.fromUid == request.auth.uid
-        && request.resource.data.toUid is string
-        && request.resource.data.toUid != request.auth.uid
-        && likeId == request.auth.uid + '_' + request.resource.data.toUid
-        && adultProfile(request.resource.data.toUid)
-        && notBlocked(request.auth.uid, request.resource.data.toUid)
-        && request.resource.data.kind in ['like', 'pass', 'superLike'];
-      allow update, delete: if false;
+      // All like/pass writes go through trusted functions for rate limiting and mutual-consent checks.
+      allow create, update, delete: if false;
     }
 
     // Match creation is trusted-server-only: clients cannot forge mutual consent.
@@ -135,19 +127,8 @@ service cloud.firestore {
 
     // Users can submit reports, but only staff with a server-issued custom claim can read them.
     match /reports/{reportId} {
-      allow create: if activeAdult()
-        && request.resource.data.keys().hasOnly([
-          'reporterUid', 'targetUid', 'reason', 'details', 'createdAt', 'status'
-        ])
-        && request.resource.data.reporterUid == request.auth.uid
-        && request.resource.data.targetUid is string
-        && request.resource.data.targetUid != request.auth.uid
-        && request.resource.data.reason in [
-          'harassment', 'spam', 'fake_profile', 'underage', 'inappropriate_content', 'other'
-        ]
-        && request.resource.data.details is string
-        && request.resource.data.details.size() <= 2000
-        && request.resource.data.status == 'open';
+      // Report creation is rate-limited and validated by the trusted callable function.
+      allow create: if false;
       allow read: if signedIn() && request.auth.token.moderator == true;
       allow update, delete: if false;
     }
