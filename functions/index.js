@@ -274,3 +274,26 @@ exports.listDiscoveryProfiles = onCall(async request => {
     hasMore: snapshot.docs.length === 100
   };
 });
+
+
+exports.unblockMember = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const { targetUid } = request.data || {};
+  validateTarget(targetUid, uid);
+  const blockRef = db.collection('blocks').doc(uid + '_' + targetUid);
+  const auditRef = db.collection('adminAudit').doc();
+  return db.runTransaction(async transaction => {
+    const own = await transaction.get(db.collection('profiles').doc(uid));
+    const account = await transaction.get(db.collection('users').doc(uid));
+    const block = await transaction.get(blockRef);
+    if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
+        own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+      throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
+    }
+    if (block.exists) transaction.delete(blockRef);
+    transaction.create(auditRef, {
+      action: 'member_unblocked', actorUid: uid, targetUid, createdAt: FieldValue.serverTimestamp()
+    });
+    return { ok: true, wasBlocked: block.exists };
+  });
+});
