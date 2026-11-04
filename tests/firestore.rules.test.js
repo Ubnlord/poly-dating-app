@@ -65,6 +65,8 @@ test('verified adult can create a constrained own profile', async () => {
     uid: 'alice',
     name: 'Alice',
     age: 21,
+    school: 'Test Polytechnic',
+    department: 'Computing',
     discoveryEnabled: true,
     emailVerified: true,
     verificationStatus: 'unverified'
@@ -76,6 +78,8 @@ test('unverified user cannot create a profile', async () => {
     uid: 'alice',
     name: 'Alice',
     age: 21,
+    school: 'Test Polytechnic',
+    department: 'Computing',
     discoveryEnabled: true,
     emailVerified: false,
     verificationStatus: 'unverified'
@@ -85,11 +89,11 @@ test('unverified user cannot create a profile', async () => {
 test('profile owner cannot write underage or privileged fields', async () => {
   const db = verifiedUser('alice');
   await assertFails(setDoc(doc(db, 'profiles/alice'), {
-    uid: 'alice', name: 'Alice', age: 17, discoveryEnabled: true,
+    uid: 'alice', name: 'Alice', age: 17, school: 'Test Polytechnic', department: 'Computing', discoveryEnabled: true,
     emailVerified: true, verificationStatus: 'unverified'
   }));
   await assertFails(setDoc(doc(db, 'profiles/alice'), {
-    uid: 'alice', name: 'Alice', age: 21, discoveryEnabled: true,
+    uid: 'alice', name: 'Alice', age: 21, school: 'Test Polytechnic', department: 'Computing', discoveryEnabled: true,
     emailVerified: true, verificationStatus: 'verified', moderator: true
   }));
 });
