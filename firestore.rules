@@ -110,13 +110,8 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read: if isMatchedMember(conversationId)
           && request.auth.uid in get(/databases/$(database)/documents/matches/$(conversationId)).data.memberIds;
-        allow create: if isMatchedMember(conversationId)
-          && request.resource.data.keys().hasOnly(['senderUid', 'text', 'createdAt'])
-          && request.resource.data.senderUid == request.auth.uid
-          && request.resource.data.text is string
-          && request.resource.data.text.size() > 0
-          && request.resource.data.text.size() <= 2000;
-        allow update, delete: if false;
+        // Message writes pass through the callable service for atomic membership checks and throttling.
+        allow create, update, delete: if false;
       }
     }
 
