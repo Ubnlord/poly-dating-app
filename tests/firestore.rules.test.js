@@ -7,6 +7,7 @@ const {
   assertSucceeds
 } = require('@firebase/rules-unit-testing');
 const { doc, getDoc, setDoc, updateDoc } = require('firebase/firestore');
+const { ref, uploadBytes } = require('firebase/storage');
 
 const PROJECT_ID = 'polyconnect-rules-test';
 let env;
@@ -46,6 +47,7 @@ before(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
+  await env.clearStorage();
 });
 
 after(async () => {
@@ -112,6 +114,49 @@ test('only verified adults can submit constrained reports; clients cannot read t
   }));
   await assertFails(getDoc(doc(db, 'reports/report1')));
   await assertFails(updateDoc(doc(db, 'reports/report1'), { status: 'closed' }));
+});
+
+
+test('verified adult can upload an allowed profile avatar', async () => {
+  await seedProfile('alice', 20);
+  const storage = env.authenticatedContext('alice', { email_verified: true }).storage();
+  const avatar = ref(storage, 'profilePhotos/alice/avatar');
+  await assertSucceeds(uploadBytes(avatar, new Uint8Array([0xff, 0xd8, 0xff]), {
+    contentType: 'image/jpeg'
+  }));
+});
+
+test('profile photo uploads are denied without a verified adult profile', async () => {
+  const unverifiedStorage = env.authenticatedContext('alice', { email_verified: false }).storage();
+  await assertFails(uploadBytes(ref(unverifiedStorage, 'profilePhotos/alice/avatar'), new Uint8Array([1]), {
+    contentType: 'image/jpeg'
+  }));
+
+  const missingProfileStorage = env.authenticatedContext('bob', { email_verified: true }).storage();
+  await assertFails(uploadBytes(ref(missingProfileStorage, 'profilePhotos/bob/avatar'), new Uint8Array([1]), {
+    contentType: 'image/jpeg'
+  }));
+
+  await seedProfile('minor', 17);
+  const minorStorage = env.authenticatedContext('minor', { email_verified: true }).storage();
+  await assertFails(uploadBytes(ref(minorStorage, 'profilePhotos/minor/avatar'), new Uint8Array([1]), {
+    contentType: 'image/jpeg'
+  }));
+});
+
+test('profile photo uploads reject unsupported types, oversized files, and other users paths', async () => {
+  await seedProfile('alice', 20);
+  const storage = env.authenticatedContext('alice', { email_verified: true }).storage();
+
+  await assertFails(uploadBytes(ref(storage, 'profilePhotos/alice/avatar'), new Uint8Array([1]), {
+    contentType: 'text/plain'
+  }));
+  await assertFails(uploadBytes(ref(storage, 'profilePhotos/alice/avatar'), new Uint8Array(5 * 1024 * 1024 + 1), {
+    contentType: 'image/jpeg'
+  }));
+  await assertFails(uploadBytes(ref(storage, 'profilePhotos/bob/avatar'), new Uint8Array([1]), {
+    contentType: 'image/jpeg'
+  }));
 });
 
 test('unknown collections are denied by default', async () => {
