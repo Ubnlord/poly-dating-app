@@ -99,6 +99,9 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const sendLike = httpsCallable(functions, 'sendLike');
   const blockMember = httpsCallable(functions, 'blockMember');
   const submitSafetyReport = httpsCallable(functions, 'submitSafetyReport');
+  const listMyMatches = httpsCallable(functions, 'listMyMatches');
+  const listConversationMessages = httpsCallable(functions, 'listConversationMessages');
+  const sendConversationMessage = httpsCallable(functions, 'sendConversationMessage');
 
   const firstPage = await discover({ limit: 20 });
   assert.ok(firstPage.data.profiles.some(profile => profile.uid === bobUid));
@@ -120,6 +123,14 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(conversationSnapshot.data().status, 'active');
   assert.deepEqual(matchSnapshot.data().memberIds.slice().sort(), [aliceUid, bobUid].sort());
 
+  const bobMatches = await listMyMatches({});
+  assert.ok(bobMatches.data.matches.some(match => match.uid === aliceUid));
+  await sendConversationMessage({ conversationId: reciprocalLike.data.matchId, text: 'Hello from Bob' });
+  const bobMessages = await listConversationMessages({ conversationId: reciprocalLike.data.matchId });
+  assert.equal(bobMessages.data.messages.length, 1);
+  assert.equal(bobMessages.data.messages[0].text, 'Hello from Bob');
+  assert.equal(bobMessages.data.messages[0].senderUid, bobUid);
+
   await signOut(auth);
   await signIn(aliceMember);
 
@@ -138,6 +149,16 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const blockSnapshot = await adminDb.collection('blocks').doc(aliceUid + '_' + bobUid).get();
   assert.equal(blockSnapshot.exists, true);
   assert.equal((await adminDb.collection('matches').doc(reciprocalLike.data.matchId).get()).data().status, 'blocked');
+  const matchesAfterBlock = await listMyMatches({});
+  assert.equal(matchesAfterBlock.data.matches.some(match => match.uid === bobUid), false);
+  await assert.rejects(
+    sendConversationMessage({ conversationId: reciprocalLike.data.matchId, text: 'This must fail' }),
+    error => error && (error.code === 'functions/permission-denied' || error.code === 'permission-denied')
+  );
+  await assert.rejects(
+    listConversationMessages({ conversationId: reciprocalLike.data.matchId }),
+    error => error && (error.code === 'functions/permission-denied' || error.code === 'permission-denied')
+  );
 
   const afterBlock = await discover({ limit: 20 });
   assert.equal(afterBlock.data.profiles.some(profile => profile.uid === bobUid), false);
