@@ -850,7 +850,7 @@ const minAge=parseInt(document.getElementById('pref-min-age')?.value||'');
 const maxAge=parseInt(document.getElementById('pref-max-age')?.value||'');
 const blocked=getBlockedIds();
 return profiles.filter(p=>{
-if(blocked.includes(Number(p.id)))return false;
+if(blocked.includes(String(p.id)))return false;
 if(currentFilter!=='all'&&p.major!==currentFilter)return false;
 if(goal&&p.relationshipGoal!==goal)return false;
 if(verified==='true'&&!p.verified)return false;
@@ -895,7 +895,7 @@ return`<div class="profile-card relative bg-white dark:bg-gray-800 rounded-3xl o
 </div>
 <div class="p-6 flex justify-center gap-6 bg-white dark:bg-gray-800">
 <button onclick="undoSwipe()" class="w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-900/30 flex items-center justify-center text-amber-500 dark:text-amber-400 text-xl hover:bg-amber-100 dark:hover:bg-amber-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Undo last swipe"><i class="fas fa-rotate-left"></i></button>
-<button onclick="reportUser(${p.id},'Reported from discovery card')" class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500 dark:text-red-300 text-xl hover:bg-red-100 dark:hover:bg-red-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Report and block"><i class="fas fa-flag"></i></button>
+<button onclick="reportUser('${p.id}','Reported from discovery card')" class="w-12 h-12 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center text-red-500 dark:text-red-300 text-xl hover:bg-red-100 dark:hover:bg-red-900/50 hover:scale-110 transition-all shadow-md btn-press" title="Report and block"><i class="fas fa-flag"></i></button>
 <button onclick="passProfile()" class="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-gray-400 dark:text-gray-500 text-2xl hover:bg-gray-200 dark:hover:bg-gray-600 hover:scale-110 transition-all shadow-lg btn-press"><i class="fas fa-times"></i></button>
 <button onclick="superLike()" class="w-12 h-12 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 dark:text-blue-400 text-xl hover:bg-blue-100 dark:hover:bg-blue-900/50 hover:scale-110 transition-all shadow-md btn-press"><i class="fas fa-star"></i></button>
 <button onclick="likeProfile()" class="w-14 h-14 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 flex items-center justify-center text-white text-2xl hover:scale-110 transition-all shadow-lg shadow-pink-200 dark:shadow-none btn-press"><i class="fas fa-heart"></i></button>
@@ -997,12 +997,37 @@ keys.forEach(k=>{try{data[k]=JSON.parse(localStorage.getItem(k)||'null');}catch(
 const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
 const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='polyconnect-data.json';a.click();URL.revokeObjectURL(url);showToast('Data export downloaded');
 }
-function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blocked')||'[]').map(Number);}
+function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blocked')||'[]').map(String);}
 function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
 function recordLike(profileId){const likes=JSON.parse(localStorage.getItem('polyconnect_likes')||'[]');if(!likes.includes(profileId)){likes.push(profileId);localStorage.setItem('polyconnect_likes',JSON.stringify(likes));}}
-function isMutualMatch(profileId){const profile=profiles.find(p=>p.id===profileId);return Boolean(profile&&profile.likedMe===true);}
-function blockUser(profileId){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;let blocked=getBlockedIds();if(!blocked.includes(profileId)){blocked.push(profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}unmatchUser(profileId,false);closeChat();renderCards();renderConversations();renderSafetyCenter();showToast(profile.name+' blocked');}
-function reportUser(profileId,reason){const profile=profiles.find(p=>p.id===profileId);if(!profile)return;const reports=getReportedItems();reports.unshift({id:Date.now(),profileId,name:profile.name,reason:reason||'Safety concern',time:new Date().toLocaleString()});localStorage.setItem('polyconnect_reports',JSON.stringify(reports));blockUser(profileId);showToast('Report saved locally');}
+function isMutualMatch(profileId){const profile=profiles.find(p=>String(p.id)===String(profileId));return Boolean(profile&&profile.likedMe===true);}
+async function blockUser(profileId,notify=true){
+if(!functionsReady()){showToast('Secure blocking is unavailable. Please try again later.','error');return;}
+const id=String(profileId);
+try{
+await firebaseFunctions.httpsCallable('blockMember')({targetUid:id});
+const blocked=getBlockedIds();if(!blocked.includes(id)){blocked.push(id);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}
+profiles=profiles.filter(p=>String(p.id)!==id);
+unmatchUser(id,false);if(typeof closeChat==='function')closeChat();renderCards();renderConversations();renderSafetyCenter();
+if(notify)showToast('Member blocked. They will no longer appear in discovery.');
+}catch(error){console.error('Block failed:',error);showToast(error.message||'Could not block this member.','error');}
+}
+async function reportUser(profileId,reason){
+if(!functionsReady()){showToast('Secure reporting is unavailable. Please try again later.','error');return;}
+const id=String(profileId);
+const profile=profiles.find(p=>String(p.id)===id);
+const allowed=['harassment','spam','fake_profile','underage','inappropriate_content','other'];
+const normalized=allowed.includes(reason)?reason:'other';
+try{
+const result=await firebaseFunctions.httpsCallable('submitSafetyReport')({targetUid:id,reason:normalized,details:String(reason||'Safety concern').slice(0,2000)});
+const reports=getReportedItems();
+reports.unshift({id:result.data.reportId,profileId:id,name:profile?profile.name:'Member',reason:normalized,time:new Date().toLocaleString()});
+localStorage.setItem('polyconnect_reports',JSON.stringify(reports));
+await blockUser(id,false);
+showToast('Safety report submitted. The member has been blocked.');
+}catch(error){console.error('Report failed:',error);showToast(error.message||'Could not submit the report.','error');}
+}
+
 function unmatchUser(profileId,notify=true){let matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]').filter(m=>m.id!==profileId);localStorage.setItem('polyconnect_matches',JSON.stringify(matches));const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');delete msgs[profileId];localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();if(notify)showToast('Match removed');}
 function renderSafetyCenter(){const reportsEl=document.getElementById('reports-list'),blockedEl=document.getElementById('blocked-list');if(reportsEl){const reports=getReportedItems();reportsEl.innerHTML=reports.length?reports.map(r=>`<div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20"><p class="font-semibold text-red-600 dark:text-red-300">${r.name}</p><p>${r.reason}</p><p class="text-xs opacity-70">${r.time}</p></div>`).join(''):'No reports saved on this device.';}if(blockedEl){const blocked=getBlockedIds();blockedEl.innerHTML=blocked.length?blocked.map(id=>{const p=profiles.find(x=>x.id===id);return `<div class="flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-900"><span>${p?p.name:'User #'+id}</span><button onclick="unblockUser(${id})" class="text-purple-600 font-bold text-xs">Unblock</button></div>`}).join(''):'No blocked users.';}}
 function unblockUser(profileId){const blocked=getBlockedIds().filter(id=>id!==profileId);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));renderCards();renderSafetyCenter();showToast('User unblocked');}
