@@ -18,7 +18,7 @@ The existing single-page app includes a mix of browser-local demo features and F
 - Optional selfie camera preview only; it is not identity or student verification.
 - Discovery filters, likes, passes, super likes, and demo matching UI are present, but no fictional sample members are shown to signed-in users while the shared discovery backend is incomplete.
 - Private text conversations are available only after mutual matches; messages are sent through rate-limited callable functions and streamed from Firestore. Image attachments, reactions, read receipts, and push notifications are not enabled.
-- Safety Center UI for reporting, blocking, unmatching, and chat actions.
+- Safety Center controls for backend-backed reporting, blocking, and unblocking; dedicated unmatching and moderator review are not yet implemented.
 - Event-interest saving, profile editing, local data export, and local app-data deletion.
 
 **Important:** local demo data is not shared across accounts/devices and does not provide production identity, matching, messaging, or moderation. UI controls alone do not enforce security.
