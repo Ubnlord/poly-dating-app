@@ -16,7 +16,7 @@ The existing single-page app includes a mix of browser-local demo features and F
 - 18+ declaration during sign up and password reset when Firebase Auth is available.
 - Profile onboarding with school, department, interests, relationship goals, and profile photo uploads to Firebase Storage (JPG/PNG/WebP, up to 5 MiB), subject to authenticated-adult Storage rules.
 - Optional selfie camera preview only; it is not identity or student verification.
-- Discovery filters, paginated member discovery, likes, passes, super likes, and mutual matching use trusted Firebase callable functions; no fictional sample members are shown.
+- Discovery filters, paginated member discovery, likes, passes, super likes, undo, and mutual matching use trusted Firebase callable functions; no fictional sample members are shown.
 - Private text conversations are available only after mutual matches; messages are sent through rate-limited callable functions and streamed from Firestore. Image attachments, reactions, read receipts, and push notifications are not enabled.
 - Safety controls submit backend-backed reports, blocks, unblocks, and unmatches; moderator review and a cross-device safety-records view are not yet implemented.
 - Event-interest saving, profile editing, secure Firebase account-data export, and a clearly labeled local-cache clearing control (not cloud account deletion).
