@@ -457,7 +457,7 @@ firebaseDb=firebase.firestore();
 firebaseStorage=window.firebase.storage?firebase.storage():null;
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
-if(!user)return;
+if(!user){localStorage.removeItem('polyconnect_user');return;}
 if(!user.emailVerified){
 localStorage.removeItem('polyconnect_user');
 localStorage.removeItem('polyconnect_myprofile');
@@ -545,13 +545,7 @@ profiles=[];
 localStorage.removeItem('polyconnect_profiles');
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
 localStorage.removeItem('polyconnect_users');
- const cachedUser=JSON.parse(localStorage.getItem('polyconnect_user')||'null');
- if(cachedUser&&cachedUser.localOnly){localStorage.removeItem('polyconnect_user');localStorage.removeItem('polyconnect_myprofile');}
- const user=localStorage.getItem('polyconnect_user');
-const myProfile=localStorage.getItem('polyconnect_myprofile');
-if(user){if(myProfile&&Number(JSON.parse(myProfile).age)>=18){showApp();updateHeaderAvatar();renderCards();renderConversations();}else showWizard();}
-setupWizardInterests();
-setupReactionMenu();
+localStorage.removeItem('polyconnect_user');
 }
 
 function saveProfiles(){localStorage.setItem('polyconnect_profiles',JSON.stringify(profiles));}
