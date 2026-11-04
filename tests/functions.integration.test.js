@@ -16,8 +16,6 @@ let auth;
 let functions;
 let aliceUid;
 let bobUid;
-let aliceEmail;
-let bobEmail;
 
 async function createVerifiedMember(label) {
   const email = label + '-' + crypto.randomUUID() + '@example.test';
@@ -65,13 +63,25 @@ before(async () => {
   const bob = await createVerifiedMember('Bob');
   aliceUid = alice.uid;
   bobUid = bob.uid;
-  aliceEmail = alice.email;
-  bobEmail = bob.email;
   await signIn(alice.token);
 });
 
 after(async () => {
   try { await signOut(auth); } catch (_) {}
+  for (const uid of [aliceUid, bobUid]) {
+    if (!uid) continue;
+    const queries = [
+      ['likes', 'fromUid'], ['matches', 'memberIds'], ['conversations', 'memberIds'],
+      ['reports', 'reporterUid'], ['blocks', 'blockerUid']
+    ];
+    for (const [collection, field] of queries) {
+      const query = field === 'memberIds'
+        ? adminDb.collection(collection).where(field, 'array-contains', uid)
+        : adminDb.collection(collection).where(field, '==', uid);
+      const snapshot = await query.get();
+      for (const document of snapshot.docs) await document.ref.delete();
+    }
+  }
   for (const uid of [aliceUid, bobUid]) {
     if (!uid) continue;
     for (const collection of ['profiles', 'users', 'rateLimits']) {
