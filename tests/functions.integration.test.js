@@ -2,7 +2,7 @@ const { before, after, test } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 const { initializeApp, deleteApp } = require('firebase/app');
-const { getAuth, connectAuthEmulator, signInWithCustomToken, signOut } = require('firebase/auth');
+const { getAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } = require('firebase/auth');
 const { getFunctions, connectFunctionsEmulator, httpsCallable } = require('firebase/functions');
 
 const PROJECT_ID = 'polyconnect-rules-test';
@@ -25,7 +25,6 @@ async function createVerifiedMember(label) {
     emailVerified: true,
     displayName: label
   });
-  const token = await adminAuth.createCustomToken(user.uid);
   await adminDb.collection('profiles').doc(user.uid).set({
     uid: user.uid,
     name: label,
@@ -41,11 +40,11 @@ async function createVerifiedMember(label) {
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   });
-  return { uid: user.uid, email, token };
+  return { uid: user.uid, email, password: 'Test-password-123!' };
 }
 
-async function signIn(token) {
-  await signInWithCustomToken(auth, token);
+async function signIn(member) {
+  await signInWithEmailAndPassword(auth, member.email, member.password);
 }
 
 before(async () => {
@@ -63,7 +62,7 @@ before(async () => {
   const bob = await createVerifiedMember('Bob');
   aliceUid = alice.uid;
   bobUid = bob.uid;
-  await signIn(alice.token);
+  await signIn(alice);
 });
 
 after(async () => {
@@ -107,9 +106,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(firstLike.data.matched, false);
 
   await signOut(auth);
-  const bob = await adminAuth.getUser(bobUid);
-  const bobToken = await adminAuth.createCustomToken(bob.uid);
-  await signIn(bobToken);
+  await signIn(bob);
 
   const reciprocalLike = await sendLike({ targetUid: aliceUid, kind: 'superLike' });
   assert.equal(reciprocalLike.data.matched, true);
@@ -122,8 +119,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.deepEqual(matchSnapshot.data().memberIds.slice().sort(), [aliceUid, bobUid].sort());
 
   await signOut(auth);
-  const alice = await adminAuth.getUser(aliceUid);
-  await signIn(await adminAuth.createCustomToken(alice.uid));
+  await signIn(alice);
 
   const report = await submitSafetyReport({
     targetUid: bobUid,
