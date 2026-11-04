@@ -1,5 +1,6 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
+const { FieldPath } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 
@@ -232,7 +233,7 @@ exports.listDiscoveryProfiles = onCall(async request => {
   let query = db.collection('profiles')
     .where('age', '>=', 18)
     .orderBy('age')
-    .orderBy(admin.firestore.FieldPath.documentId())
+    .orderBy(FieldPath.documentId())
     .limit(100);
   if (cursor) query = query.startAfter(cursor.age, cursor.uid);
   const snapshot = await query.get();
