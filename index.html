@@ -252,7 +252,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 </div>
 <div id="preference-panel" class="hidden grid grid-cols-2 gap-3 mb-3">
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">Goal</label><select id="pref-goal" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any goal</option><option>Serious relationship</option><option>Casual dating</option><option>Friendship first</option><option>Study buddy</option><option>Not sure yet</option></select></div>
-<div><label class="text-[11px] font-semibold text-gray-500 uppercase">Verified</label><select id="pref-verified" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Everyone</option><option value="true">Verified only</option></select></div>
+
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">Gender</label><select id="pref-gender" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any gender</option><option>Male</option><option>Female</option><option>Non-binary</option></select></div>
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">State</label><select id="pref-state" onchange="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"><option value="">Any state</option><option>Lagos</option><option>Abuja</option><option>Kaduna</option><option>Ogun</option><option>Oyo</option><option>Edo</option><option>Rivers</option><option>Enugu</option><option>Other</option></select></div>
 <div><label class="text-[11px] font-semibold text-gray-500 uppercase">Min age</label><input id="pref-min-age" type="number" min="18" max="35" placeholder="18" oninput="renderCards()" class="w-full mt-1 px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 text-xs bg-transparent"></div>
@@ -843,7 +843,6 @@ return {score:score+'%',details:reasons.length?reasons.join(' · '):(profile.com
 function getFilteredProfiles(){
 const q=(document.getElementById('profile-search')?.value||'').trim().toLowerCase();
 const goal=document.getElementById('pref-goal')?.value||'';
-const verified=document.getElementById('pref-verified')?.value||'';
 const gender=document.getElementById('pref-gender')?.value||'';
 const state=document.getElementById('pref-state')?.value||'';
 const minAge=parseInt(document.getElementById('pref-min-age')?.value||'');
@@ -853,7 +852,6 @@ return profiles.filter(p=>{
 if(blocked.includes(String(p.id)))return false;
 if(currentFilter!=='all'&&p.major!==currentFilter)return false;
 if(goal&&p.relationshipGoal!==goal)return false;
-if(verified==='true'&&!p.verified)return false;
 if(gender&&p.gender!==gender)return false;
 if(state&&p.state!==state)return false;
 if(minAge&&p.age<minAge)return false;
