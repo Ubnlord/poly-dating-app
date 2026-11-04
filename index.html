@@ -11,6 +11,7 @@
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-functions-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-analytics-compat.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -444,8 +445,10 @@ appId:"1:465289858492:web:c43afae8183b2d7833afb9",
 measurementId:"G-TD810WXVH8"
 };
 
-let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseStorage=null,firebaseAnalytics=null;
+let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseStorage=null,firebaseFunctions=null,firebaseAnalytics=null;
+let discoveryCursor=null,discoveryHasMore=true,discoveryLoading=false;
 const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb&&firebaseStorage);
+const functionsReady=()=>Boolean(firebaseFunctions&&firebaseAuth&&firebaseAuth.currentUser&&firebaseAuth.currentUser.emailVerified);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
 function initFirebase(){
@@ -455,6 +458,7 @@ firebaseApp=firebase.initializeApp(firebaseConfig);
 firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
 firebaseStorage=window.firebase.storage?firebase.storage():null;
+firebaseFunctions=window.firebase.functions?firebase.app().functions("us-central1"):null;
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user){localStorage.removeItem('polyconnect_user');return;}
