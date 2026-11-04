@@ -104,6 +104,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const discover = httpsCallable(functions, 'listDiscoveryProfiles');
   const sendLike = httpsCallable(functions, 'sendLike');
   const blockMember = httpsCallable(functions, 'blockMember');
+  const unblockMember = httpsCallable(functions, 'unblockMember');
   const submitSafetyReport = httpsCallable(functions, 'submitSafetyReport');
   const listMyMatches = httpsCallable(functions, 'listMyMatches');
   const listConversationMessages = httpsCallable(functions, 'listConversationMessages');
@@ -173,4 +174,16 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
     sendLike({ targetUid: bobUid, kind: 'like' }),
     error => error && (error.code === 'functions/permission-denied' || error.code === 'permission-denied')
   );
+  
+  const unblocked = await unblockMember({ targetUid: bobUid });
+  assert.equal(unblocked.data.ok, true);
+  const aliceRelike = await sendLike({ targetUid: bobUid, kind: 'like' });
+  assert.equal(aliceRelike.data.matched, false);
+  await signOut(auth);
+  await signIn(bobMember);
+  const bobRelike = await sendLike({ targetUid: aliceUid, kind: 'like' });
+  assert.equal(bobRelike.data.matched, true);
+  const reopenedMessages = await listConversationMessages({ conversationId: reciprocalLike.data.matchId });
+  assert.equal(reopenedMessages.data.messages.length, 0);
+
 });
