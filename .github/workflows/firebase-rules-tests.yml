@@ -22,5 +22,7 @@ jobs:
           node-version: 20
       - name: Install test dependencies
         run: npm install --no-audit --no-fund
+      - name: Check inline JavaScript syntax
+        run: npm run test:syntax
       - name: Run Firestore and Storage emulator tests
         run: npm run test:emulators
