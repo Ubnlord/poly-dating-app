@@ -114,11 +114,15 @@ exports.sendLike = onCall(async request => {
         transaction.create(matchRef, {
           memberIds: ids, status: 'active', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
         });
+      } else if (['blocked', 'unmatched'].includes(existingMatch.data().status)) {
+        transaction.update(matchRef, { status: 'active', updatedAt: FieldValue.serverTimestamp() });
       }
       if (!existingConversation.exists) {
         transaction.create(conversationRef, {
           memberIds: ids, status: 'active', createdAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp()
         });
+      } else if (['blocked', 'unmatched'].includes(existingConversation.data().status)) {
+        transaction.update(conversationRef, { status: 'active', updatedAt: FieldValue.serverTimestamp() });
       }
       return { ok: true, duplicate: false, matched: true, matchId };
     }
