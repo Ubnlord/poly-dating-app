@@ -1,6 +1,6 @@
 const crypto = require('node:crypto');
 const admin = require('firebase-admin');
-const { FieldPath } = require('firebase-admin/firestore');
+const { FieldPath, FieldValue } = require('firebase-admin/firestore');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 
@@ -8,7 +8,6 @@ admin.initializeApp();
 setGlobalOptions({ region: 'us-central1', maxInstances: 10 });
 
 const db = admin.firestore();
-const FieldValue = admin.firestore.FieldValue;
 
 function requireVerifiedAdult(request) {
   if (!request.auth) {
