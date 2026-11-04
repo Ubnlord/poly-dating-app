@@ -6,8 +6,8 @@ const { getAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } = re
 const { getFunctions, connectFunctionsEmulator, httpsCallable } = require('firebase/functions');
 
 const PROJECT_ID = 'polyconnect-rules-test';
-const admin = require('../functions/node_modules/firebase-admin');
-const { FieldValue } = require('../functions/node_modules/firebase-admin/firestore');
+const admin = require('firebase-admin');
+const { FieldValue } = require('firebase-admin/firestore');
 const adminApp = admin.initializeApp({ projectId: PROJECT_ID }, 'polyconnect-functions-test');
 const adminAuth = admin.auth(adminApp);
 const adminDb = admin.firestore(adminApp);
