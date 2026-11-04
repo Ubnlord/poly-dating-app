@@ -21,7 +21,13 @@ function requireVerifiedAdult(request) {
 
 function matchDocumentId(uidA, uidB) {
   return crypto.createHash('sha256')
-    .update([uidA, uidB].sort().join(':'))
+    .update(JSON.stringify([uidA, uidB].sort()))
+    .digest('hex');
+}
+
+function likeDocumentId(fromUid, toUid) {
+  return crypto.createHash('sha256')
+    .update(JSON.stringify([fromUid, toUid]))
     .digest('hex');
 }
 
@@ -41,8 +47,8 @@ exports.sendLike = onCall(async request => {
 
   const targetRef = db.collection('profiles').doc(targetUid);
   const ownRef = db.collection('profiles').doc(uid);
-  const likeRef = db.collection('likes').doc(uid + '_' + targetUid);
-  const reverseRef = db.collection('likes').doc(targetUid + '_' + uid);
+  const likeRef = db.collection('likes').doc(likeDocumentId(uid, targetUid));
+  const reverseRef = db.collection('likes').doc(likeDocumentId(targetUid, uid));
   const blockRef = db.collection('blocks').doc(uid + '_' + targetUid);
   const reverseBlockRef = db.collection('blocks').doc(targetUid + '_' + uid);
   const ids = [uid, targetUid].sort();
