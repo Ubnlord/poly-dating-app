@@ -109,6 +109,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const listMyMatches = httpsCallable(functions, 'listMyMatches');
   const listConversationMessages = httpsCallable(functions, 'listConversationMessages');
   const sendConversationMessage = httpsCallable(functions, 'sendConversationMessage');
+  const exportMyData = httpsCallable(functions, 'exportMyData');
 
   const firstPage = await discover({ limit: 20 });
   assert.ok(firstPage.data.profiles.some(profile => profile.uid === bobUid));
@@ -137,6 +138,10 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(bobMessages.data.messages.length, 1);
   assert.equal(bobMessages.data.messages[0].text, 'Hello from Bob');
   assert.equal(bobMessages.data.messages[0].senderUid, bobUid);
+  const bobExport = await exportMyData({});
+  assert.equal(bobExport.data.account.uid, bobUid);
+  assert.equal(bobExport.data.profile.name, 'Bob');
+  assert.ok(bobExport.data.conversations.some(conversation => conversation.messages.some(message => message.text === 'Hello from Bob')));
 
   await signOut(auth);
   await signIn(aliceMember);
@@ -150,6 +155,8 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const reportSnapshot = await adminDb.collection('reports').doc(report.data.reportId).get();
   assert.equal(reportSnapshot.data().reporterUid, aliceUid);
   assert.equal(reportSnapshot.data().status, 'open');
+  const aliceExport = await exportMyData({});
+  assert.ok(aliceExport.data.reportsFiled.some(item => item.reportId === report.data.reportId));
 
   const blocked = await blockMember({ targetUid: bobUid });
   assert.equal(blocked.data.ok, true);
