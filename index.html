@@ -916,33 +916,44 @@ renderCards();
 
 function getVisibleCard(){return document.querySelector('.profile-card:not(.hidden):not(.swipe-left):not(.swipe-right)');}
 
-function likeProfile(){
+async function likeProfile(){
 const card=getVisibleCard();if(!card)return;
-swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
+if(!functionsReady()){showToast('Secure member interactions are unavailable. Please try again later.','error');return;}
+const pid=String(card.dataset.id);
+const profile=profiles.find(p=>String(p.id)===pid);
+try{
+const result=await firebaseFunctions.httpsCallable('sendLike')({targetUid:pid,kind:'like'});
+swipeHistory.push({id:pid,filter:currentFilter});
+if(profile)currentMatchProfile=profile;
 card.classList.add('swipe-right');
-const pid=parseInt(card.dataset.id);
-const profile=profiles.find(p=>p.id===pid);
-if(profile){currentMatchProfile=profile;}
-recordLike(pid);
-setTimeout(()=>{if(isMutualMatch(pid)&&currentMatchProfile)showMatchModal();else showToast('Like sent');nextCard();},350);
+setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Messaging is being connected next.':'Like sent securely.');nextCard();},350);
+}catch(error){console.error('Like failed:',error);showToast(error.message||'Could not send like.','error');}
 }
 
-function passProfile(){
+async function passProfile(){
 const card=getVisibleCard();if(!card)return;
-swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
+if(!functionsReady()){showToast('Secure member interactions are unavailable. Please try again later.','error');return;}
+const pid=String(card.dataset.id);
+try{
+await firebaseFunctions.httpsCallable('sendLike')({targetUid:pid,kind:'pass'});
+swipeHistory.push({id:pid,filter:currentFilter});
 card.classList.add('swipe-left');
 setTimeout(()=>nextCard(),350);
+}catch(error){console.error('Pass failed:',error);showToast(error.message||'Could not pass this profile.','error');}
 }
 
-function superLike(){
+async function superLike(){
 const card=getVisibleCard();if(!card)return;
-swipeHistory.push({id:parseInt(card.dataset.id),filter:currentFilter});
-card.style.transform='scale(1.1)';card.style.opacity='0';
-const pid=parseInt(card.dataset.id);
-const profile=profiles.find(p=>p.id===pid);
+if(!functionsReady()){showToast('Secure member interactions are unavailable. Please try again later.','error');return;}
+const pid=String(card.dataset.id);
+const profile=profiles.find(p=>String(p.id)===pid);
+try{
+const result=await firebaseFunctions.httpsCallable('sendLike')({targetUid:pid,kind:'superLike'});
+swipeHistory.push({id:pid,filter:currentFilter});
 if(profile)currentMatchProfile=profile;
-recordLike(pid);
-setTimeout(()=>{if(isMutualMatch(pid)&&currentMatchProfile)showMatchModal();else showToast('Super like saved in demo mode');nextCard();},300);
+card.style.transform='scale(1.1)';card.style.opacity='0';
+setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Messaging is being connected next.':'Super like sent securely.');nextCard();},300);
+}catch(error){console.error('Super like failed:',error);showToast(error.message||'Could not send super like.','error');}
 }
 
 function nextCard(){
@@ -963,7 +974,7 @@ if(!last){showToast('Nothing to undo yet','error');return;}
 renderCards();
 const cards=[...document.querySelectorAll('.profile-card')];
 cards.forEach(card=>card.classList.add('hidden'));
-const target=cards.find(card=>parseInt(card.dataset.id)===last.id);
+const target=cards.find(card=>String(card.dataset.id)===String(last.id));
 if(target){target.classList.remove('hidden','swipe-left','swipe-right');target.classList.add('fade-in');showToast('Last swipe restored');}
 else showToast('That profile is not in the current filters','error');
 }
