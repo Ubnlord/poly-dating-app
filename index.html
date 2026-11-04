@@ -596,7 +596,7 @@ return;
 }
 const profile=await loadFirebaseProfile(user.uid);
 localStorage.setItem('polyconnect_user',JSON.stringify({uid:user.uid,name:user.displayName||'',email:user.email}));
-if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderCards();renderConversations();}
+if(profile&&Number(profile.age)>=18){localStorage.setItem('polyconnect_myprofile',JSON.stringify(profile));showApp();updateHeaderAvatar();renderConversations();await loadDiscoveryProfiles(true);}
 else {localStorage.removeItem('polyconnect_myprofile');showWizard();}
 showToast('Welcome back!');
 return;
