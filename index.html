@@ -1022,12 +1022,13 @@ document.querySelectorAll('#wiz-interests .interest-tag').forEach(tag=>tag.class
 if(mp.image){const img=document.getElementById('wizard-photo-preview'),icon=document.getElementById('wizard-photo-icon');img.src=mp.image;img.classList.remove('hidden');icon.classList.add('hidden');}
 },0);
 }
-function exportMyData(){
-const keys=['polyconnect_user','polyconnect_myprofile','polyconnect_matches','polyconnect_messages','polyconnect_likes','polyconnect_reports','polyconnect_blocked','polyconnect_events'];
-const data={exportedAt:new Date().toISOString()};
-keys.forEach(k=>{try{data[k]=JSON.parse(localStorage.getItem(k)||'null');}catch(e){data[k]=localStorage.getItem(k);}});
-const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='polyconnect-data.json';a.click();URL.revokeObjectURL(url);showToast('Data export downloaded');
+async function exportMyData(){
+if(!functionsReady()){showToast('Secure data export is unavailable.','error');return;}
+try{
+const response=await firebaseFunctions.httpsCallable('exportMyData')({});
+const blob=new Blob([JSON.stringify(response.data,null,2)],{type:'application/json'});
+const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='polyconnect-data-export.json';a.click();URL.revokeObjectURL(url);showToast('Your account data export is ready.');
+}catch(error){console.error('Data export failed:',error);showToast(error.message||'Could not export your account data.','error');}
 }
 function getBlockedIds(){return JSON.parse(localStorage.getItem('polyconnect_blocked')||'[]').map(String);}
 function getReportedItems(){return JSON.parse(localStorage.getItem('polyconnect_reports')||'[]');}
