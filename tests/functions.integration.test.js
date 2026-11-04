@@ -7,6 +7,7 @@ const { getFunctions, connectFunctionsEmulator, httpsCallable } = require('fireb
 
 const PROJECT_ID = 'polyconnect-rules-test';
 const admin = require('../functions/node_modules/firebase-admin');
+const { FieldValue } = require('../functions/node_modules/firebase-admin/firestore');
 const adminApp = admin.initializeApp({ projectId: PROJECT_ID }, 'polyconnect-functions-test');
 const adminAuth = admin.auth(adminApp);
 const adminDb = admin.firestore(adminApp);
@@ -39,8 +40,8 @@ async function createVerifiedMember(label) {
     discoveryEnabled: true,
     emailVerified: true,
     verificationStatus: 'unverified',
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    createdAt: FieldValue.serverTimestamp(),
+    updatedAt: FieldValue.serverTimestamp()
   });
   return { uid: user.uid, email, password: 'Test-password-123!' };
 }
