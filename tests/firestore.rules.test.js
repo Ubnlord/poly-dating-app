@@ -107,6 +107,17 @@ test('clients cannot write likes, matches, or conversations directly', async () 
   await assertFails(setDoc(doc(db, 'conversations/alice_bob'), {
     memberIds: ['alice', 'bob'], status: 'active'
   }));
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'matches/alice_bob'), {
+      memberIds: ['alice', 'bob'], status: 'active'
+    });
+    await setDoc(doc(context.firestore(), 'conversations/alice_bob'), {
+      memberIds: ['alice', 'bob'], status: 'active'
+    });
+  });
+  await assertFails(setDoc(doc(db, 'conversations/alice_bob/messages/message1'), {
+    senderUid: 'alice', text: 'Hello', createdAt: new Date()
+  }));
 });
 
 test('clients cannot create or read reports directly', async () => {
