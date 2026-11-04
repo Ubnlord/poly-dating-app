@@ -1140,18 +1140,17 @@ area.scrollTop=area.scrollHeight;
 }catch(error){console.error('Message load failed:',error);area.innerHTML='<p class="text-center text-red-400 py-8">Could not load messages. Please try again.</p>';showToast('Could not load this conversation.','error');}
 }
 
-function sendMessage(){
+async function sendMessage(){
 const input=document.getElementById('chat-input');
 const text=input.value.trim();
 if(!text||!currentChatId)return;
-const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');
-if(!msgs[currentChatId])msgs[currentChatId]=[];
-msgs[currentChatId].push({sender:'me',text:text,time:formatTime(),read:false,reactions:[]});
-localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));
+if(!functionsReady()){showToast('Secure messaging is unavailable.','error');return;}
+try{
+await firebaseFunctions.httpsCallable('sendConversationMessage')({conversationId:currentChatId,text});
 input.value='';
-renderMessages();
-renderConversations();
-// Demo-only auto-replies are disabled so simulated messages are not mistaken for real people.
+await renderMessages();
+await loadMyMatches();
+}catch(error){console.error('Message send failed:',error);showToast(error.message||'Could not send message.','error');}
 }
 
 function simulateReply(pid){
