@@ -237,11 +237,15 @@ exports.listDiscoveryProfiles = onCall(async request => {
     .limit(100);
   if (cursor) query = query.startAfter(cursor.age, cursor.uid);
   const snapshot = await query.get();
-  const eligible = snapshot.docs.filter(doc => {
+  const eligible = [];
+  for (const doc of snapshot.docs) {
     const profile = doc.data();
-    return !excluded.has(doc.id) && profile.emailVerified === true &&
-      profile.discoveryEnabled === true && Number.isInteger(profile.age) && profile.age >= 18;
-  });
+    if (excluded.has(doc.id) || profile.emailVerified !== true ||
+        profile.discoveryEnabled !== true || !Number.isInteger(profile.age) || profile.age < 18) continue;
+    const targetAccount = await db.collection('users').doc(doc.id).get();
+    if (targetAccount.exists && targetAccount.data().suspended === true) continue;
+    eligible.push(doc);
+  }
   const page = eligible.slice(0, pageSize);
   const profiles = page.map(doc => {
     const p = doc.data();
