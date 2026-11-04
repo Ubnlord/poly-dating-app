@@ -1102,20 +1102,21 @@ return `<div class="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounde
 const badge=document.getElementById('msg-badge');if(badge)badge.classList.add('hidden');
 }
 
-function openChat(profileId){
-currentChatId=profileId;
-const profile=profiles.find(p=>p.id===profileId);
-if(!profile)return;
-document.getElementById('chat-avatar').src=profile.image;
-document.getElementById('chat-name').textContent=profile.name;
+async function openChat(profileId){
+const id=String(profileId);
+const matches=JSON.parse(localStorage.getItem('polyconnect_matches')||'[]');
+const match=matches.find(m=>String(m.id)===id);
+const profile=profiles.find(p=>String(p.id)===id)||(match&&match.profile);
+if(!match||!match.conversationId||!profile){showToast('This conversation is not available.','error');return;}
+currentChatProfileId=id;
+currentChatId=match.conversationId;
+document.getElementById('chat-avatar').src=profile.image||'';
+document.getElementById('chat-name').textContent=profile.name||'Match';
 document.getElementById('chat-screen').classList.remove('hidden');
-renderMessages();
-// Mark as read
-const msgs=JSON.parse(localStorage.getItem('polyconnect_messages')||'{}');
-if(msgs[profileId]){msgs[profileId].forEach(m=>{if(m.sender==='them')m.read=true;});localStorage.setItem('polyconnect_messages',JSON.stringify(msgs));renderConversations();}
+await renderMessages();
 }
 
-function closeChat(){document.getElementById('chat-screen').classList.add('hidden');currentChatId=null;document.getElementById('emoji-picker').classList.add('hidden');}
+function closeChat(){document.getElementById('chat-screen').classList.add('hidden');currentChatId=null;currentChatProfileId=null;document.getElementById('emoji-picker').classList.add('hidden');}
 
 function renderMessages(){
 const area=document.getElementById('messages-area');
