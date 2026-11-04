@@ -968,12 +968,11 @@ setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Messaging i
 }
 
 function nextCard(){
-const cards=document.querySelectorAll('.profile-card');
-let found=false;
-for(let card of cards){
-if(!found&&!card.classList.contains('hidden')&&!card.classList.contains('swipe-left')&&!card.classList.contains('swipe-right')){card.classList.add('hidden');found=true;}
-else if(found&&card.classList.contains('hidden')){card.classList.remove('hidden');card.classList.add('fade-in');return;}
-}
+const cards=[...document.querySelectorAll('.profile-card')];
+const current=cards.find(card=>!card.classList.contains('hidden')&&(card.classList.contains('swipe-left')||card.classList.contains('swipe-right')));
+if(current)current.classList.add('hidden');
+const next=cards.find(card=>card.classList.contains('hidden')&&!card.classList.contains('swipe-left')&&!card.classList.contains('swipe-right'));
+if(next){next.classList.remove('hidden');next.classList.add('fade-in');return;}
 document.getElementById('empty-state').classList.remove('hidden');
 if(discoveryHasMore)loadDiscoveryProfiles(false);
 }
