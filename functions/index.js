@@ -316,12 +316,14 @@ exports.listMyMatches = onCall(async request => {
     if (match.status !== 'active' || !Array.isArray(match.memberIds) || match.memberIds.length !== 2) return null;
     const otherUid = match.memberIds.find(memberId => memberId !== uid);
     if (!otherUid) return null;
-    const [profileDoc, forwardBlock, reverseBlock] = await Promise.all([
+    const [profileDoc, targetAccount, forwardBlock, reverseBlock] = await Promise.all([
       db.collection('profiles').doc(otherUid).get(),
+      db.collection('users').doc(otherUid).get(),
       db.collection('blocks').doc(uid + '_' + otherUid).get(),
       db.collection('blocks').doc(otherUid + '_' + uid).get()
     ]);
-    if (!profileDoc.exists || forwardBlock.exists || reverseBlock.exists) return null;
+    if (!profileDoc.exists || (targetAccount.exists && targetAccount.data().suspended === true) ||
+        forwardBlock.exists || reverseBlock.exists) return null;
     const profile = profileDoc.data();
     if (profile.emailVerified !== true || profile.discoveryEnabled !== true ||
         !Number.isInteger(profile.age) || profile.age < 18) return null;
