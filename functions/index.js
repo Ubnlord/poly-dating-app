@@ -162,6 +162,7 @@ exports.blockMember = onCall(async request => {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
     if (!target.exists) throw new HttpsError('not-found', 'Member profile not found.');
+    if (existingBlock.exists) return { ok: true, alreadyBlocked: true };
     if (!existingBlock.exists) {
       transaction.create(blockRef, {
         blockerUid: uid, blockedUid: targetUid, createdAt: FieldValue.serverTimestamp()
@@ -307,7 +308,8 @@ exports.unblockMember = onCall(async request => {
         own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
-    if (block.exists) transaction.delete(blockRef);
+    if (!block.exists) return { ok: true, wasBlocked: false };
+    transaction.delete(blockRef);
     transaction.create(auditRef, {
       action: 'member_unblocked', actorUid: uid, targetUid, createdAt: FieldValue.serverTimestamp()
     });
