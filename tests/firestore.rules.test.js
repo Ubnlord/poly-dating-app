@@ -7,7 +7,7 @@ const {
   assertSucceeds
 } = require('@firebase/rules-unit-testing');
 const { doc, getDoc, setDoc, updateDoc } = require('firebase/firestore');
-const { ref, uploadBytes } = require('firebase/storage');
+const { ref, uploadBytes, getBytes } = require('firebase/storage');
 
 const PROJECT_ID = 'polyconnect-rules-test';
 let env;
@@ -146,6 +146,35 @@ test('profile photo uploads are denied without a verified adult profile', async 
   await assertFails(uploadBytes(ref(minorStorage, 'profilePhotos/minor/avatar'), new Uint8Array([1]), {
     contentType: 'image/jpeg'
   }));
+});
+
+test('profile photo paths cannot point to another member avatar', async () => {
+  const db = verifiedUser('alice');
+  await assertFails(setDoc(doc(db, 'profiles/alice'), {
+    uid: 'alice', name: 'Alice', age: 21, discoveryEnabled: true,
+    emailVerified: true, verificationStatus: 'unverified',
+    imagePath: 'profilePhotos/bob/avatar'
+  }));
+});
+
+test('avatar reads respect discovery visibility and mutual blocks', async () => {
+  await seedProfile('alice', 20);
+  await seedProfile('bob', 22);
+  const aliceStorage = env.authenticatedContext('alice', { email_verified: true }).storage();
+  const bobStorage = env.authenticatedContext('bob', { email_verified: true }).storage();
+  const avatar = ref(aliceStorage, 'profilePhotos/alice/avatar');
+  await assertSucceeds(uploadBytes(avatar, new Uint8Array([0xff, 0xd8, 0xff]), {
+    contentType: 'image/jpeg'
+  }));
+  await assertSucceeds(getBytes(ref(bobStorage, 'profilePhotos/alice/avatar'), 1024));
+
+  await env.withSecurityRulesDisabled(async context => {
+    await setDoc(doc(context.firestore(), 'blocks/alice_bob'), {
+      blockerUid: 'alice', blockedUid: 'bob', createdAt: new Date()
+    });
+  });
+  await assertFails(getBytes(ref(bobStorage, 'profilePhotos/alice/avatar'), 1024));
+  await assertSucceeds(getBytes(ref(aliceStorage, 'profilePhotos/alice/avatar'), 1024));
 });
 
 test('profile photo uploads reject unsupported types, oversized files, and other users paths', async () => {
