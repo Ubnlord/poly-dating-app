@@ -479,21 +479,48 @@ showWizard();
 
 async function loadFirebaseProfile(uid){
 if(!firebaseReady()||!uid)throw new Error('Firebase is not ready.');
-const doc=await firebaseDb.collection('profiles').doc(uid).get();
-return doc.exists?doc.data():null;
+const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
+if(!snapshot.exists)return null;
+const profile=snapshot.data();
+if(!profile.image){
+profile.image='https://ui-avatars.com/api/?name='+encodeURIComponent(profile.name||'PolyConnect')+'&background=8b5cf6&color=fff&size=400';
+}
+return profile;
 }
 
 async function saveFirebaseProfile(profile){
 if(!firebaseReady()||!firebaseAuth.currentUser)throw new Error('Please sign in to save your profile.');
-const safeProfile={...profile,uid:firebaseAuth.currentUser.uid,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
-delete safeProfile.selfie;
-if(typeof safeProfile.image==='string'&&safeProfile.image.startsWith('data:'))delete safeProfile.image;
-await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(safeProfile,{merge:true});
+const user=firebaseAuth.currentUser;
+if(!user.emailVerified)throw new Error('Verify your email before saving a profile.');
+const profileRef=firebaseDb.collection('profiles').doc(user.uid);
+const existing=await profileRef.get();
+const safeProfile={
+name:String(profile.name||'').trim(),
+age:Number(profile.age),
+gender:String(profile.gender||''),
+bio:String(profile.bio||''),
+school:String(profile.school||''),
+department:String(profile.department||''),
+level:String(profile.level||''),
+state:String(profile.state||''),
+interests:Array.isArray(profile.interests)?profile.interests:[],
+hobbies:String(profile.hobbies||''),
+relationshipGoal:String(profile.relationshipGoal||''),
+religion:String(profile.religion||''),
+languages:String(profile.languages||''),
+discoveryEnabled:true,
+updatedAt:firebase.firestore.FieldValue.serverTimestamp()
+};
+if(!Number.isInteger(safeProfile.age)||safeProfile.age<18||safeProfile.age>120)throw new Error('A valid age of 18 or older is required.');
+if(!safeProfile.name||!safeProfile.school||!safeProfile.department)throw new Error('Complete your name, school, and department.');
+if(!existing.exists){
+safeProfile.uid=user.uid;
+safeProfile.emailVerified:true;
+safeProfile.verificationStatus='unverified';
+safeProfile.createdAt=firebase.firestore.FieldValue.serverTimestamp();
 }
-
-async function saveFirebaseMatch(profile){
-if(!firebaseReady()||!firebaseAuth.currentUser||!profile)return;
-await firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).collection('matches').doc(String(profile.id)).set({id:profile.id,name:profile.name,image:profile.image,time:'Just now',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+await profileRef.set(safeProfile,{merge:true});
+return {...safeProfile,image:'https://ui-avatars.com/api/?name='+encodeURIComponent(safeProfile.name)+'&background=8b5cf6&color=fff&size=400'};
 }
 
 const defaultProfiles=[
