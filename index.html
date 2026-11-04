@@ -455,7 +455,7 @@ if(!window.firebase){console.warn('Firebase SDK did not load. Authentication is 
 firebaseApp=firebase.initializeApp(firebaseConfig);
 firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
-firebaseStorage=firebase.storage();
+firebaseStorage=window.firebase.storage?firebase.storage():null;
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user)return;
@@ -733,7 +733,9 @@ if(!Number.isInteger(myProfile.age)||myProfile.age<18){showToast('PolyConnect is
 if(!firebaseReady()){showToast('Your profile cannot be saved securely right now. Please try again when Firebase is available.','error');return;}
 if(firebaseReady()){
 try{
-await saveFirebaseProfile(myProfile);
+const savedProfile=await saveFirebaseProfile(myProfile);
+ myProfile.image=savedProfile.image;
+ delete myProfile.selfie;
 }catch(error){
 console.error('Profile save failed:',error);
 showToast('Your profile was not saved. Check your connection and try again.','error');
