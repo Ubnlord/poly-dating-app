@@ -491,7 +491,7 @@ if(typeof safeProfile.image==='string'&&safeProfile.image.startsWith('data:'))de
 await firebaseDb.collection('profiles').doc(firebaseAuth.currentUser.uid).set(safeProfile,{merge:true});
 }
 
-async async function saveFirebaseMatch(profile){
+async function saveFirebaseMatch(profile){
 if(!firebaseReady()||!firebaseAuth.currentUser||!profile)return;
 await firebaseDb.collection('users').doc(firebaseAuth.currentUser.uid).collection('matches').doc(String(profile.id)).set({id:profile.id,name:profile.name,image:profile.image,time:'Just now',updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
 }
@@ -521,7 +521,7 @@ setupReactionMenu();
 function saveProfiles(){localStorage.setItem('polyconnect_profiles',JSON.stringify(profiles));}
 function toggleAuthMode(){document.getElementById('login-form').classList.toggle('hidden');document.getElementById('signup-form').classList.toggle('hidden');}
 
-async async function doLogin(){
+async function doLogin(){
 const email=document.getElementById('login-email').value,pass=document.getElementById('login-password').value;
 if(!email||!pass){showToast('Please fill in all fields','error');return;}
 if(firebaseReady()){
@@ -567,7 +567,7 @@ return;
 showToast('Local demo accounts cannot send reset email','error');
 }
 
-async async function doSignup(){
+async function doSignup(){
 const name=document.getElementById('signup-name').value.trim(),email=document.getElementById('signup-email').value.trim(),pass=document.getElementById('signup-password').value;
 if(!name||!email||!pass){showToast('Please fill in all fields','error');return;}
 if(!document.getElementById('signup-consent').checked){showToast('Please accept the safety rules and 18+ consent','error');return;}
@@ -680,7 +680,7 @@ document.getElementById('camera-placeholder').classList.remove('hidden');
 selfieDataUrl=null;
 }
 
-async async function finishWizard(){
+async function finishWizard(){
 const photo=document.getElementById('wizard-photo-preview').src;
 const myProfile={
 name:document.getElementById('wiz-name').value,
