@@ -107,7 +107,7 @@ test('profile text fields are bounded and typed', async () => {
   }));
   await assertFails(setDoc(doc(db, 'profiles/alice'), {
     uid: 'alice', name: 'Alice', age: 21, school: 'Test Polytechnic',
-    department: 'Computing', bio: '', interests: ['x'.repeat(501)],
+    department: 'Computing', bio: '', interests: Array.from({length: 21}, (_, index) => 'interest-' + index),
     discoveryEnabled: true, emailVerified: true, verificationStatus: 'unverified'
   }));
 });
