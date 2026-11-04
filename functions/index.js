@@ -588,3 +588,19 @@ exports.exportMyData = onCall(async request => {
     }
   };
 });
+
+
+exports.listMyBlocks = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const snapshot = await db.collection('blocks').where('blockerUid', '==', uid).limit(100).get();
+  const blocks = await Promise.all(snapshot.docs.map(async blockDoc => {
+    const targetUid = blockDoc.data().blockedUid;
+    const profile = await db.collection('profiles').doc(targetUid).get();
+    return {
+      targetUid,
+      targetName: profile.exists ? (profile.data().name || 'Member') : 'Deleted member',
+      createdAt: exportTimestamp(blockDoc.data().createdAt)
+    };
+  }));
+  return { blocks };
+});
