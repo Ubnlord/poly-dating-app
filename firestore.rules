@@ -83,7 +83,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Likes use deterministic actor_target document IDs. No client can create matches.
+    // Likes are written by trusted functions using opaque deterministic IDs; clients cannot forge them.
     match /likes/{likeId} {
       allow read: if activeAdult() && (
         resource.data.fromUid == request.auth.uid ||
