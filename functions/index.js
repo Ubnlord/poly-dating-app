@@ -25,34 +25,6 @@ function matchDocumentId(uidA, uidB) {
     .digest('hex');
 }
 
-async function assertEligibleProfile(uid, transaction) {
-  const ref = db.collection('profiles').doc(uid);
-  const snapshot = await transaction.get(ref);
-  if (!snapshot.exists) {
-    throw new HttpsError('failed-precondition', 'Complete your adult profile first.');
-  }
-  const profile = snapshot.data();
-  if (!Number.isInteger(profile.age) || profile.age < 18 || profile.age > 120 ||
-      profile.emailVerified !== true || profile.discoveryEnabled !== true) {
-    throw new HttpsError('permission-denied', 'This account is not eligible for member interactions.');
-  }
-  const accountRef = db.collection('users').doc(uid);
-  const account = await transaction.get(accountRef);
-  if (account.exists && account.data().suspended === true) {
-    throw new HttpsError('permission-denied', 'This account is currently restricted.');
-  }
-  return profile;
-}
-
-async function assertNotBlocked(uidA, uidB, transaction) {
-  const forward = db.collection('blocks').doc(uidA + '_' + uidB);
-  const reverse = db.collection('blocks').doc(uidB + '_' + uidA);
-  const [a, b] = await Promise.all([transaction.get(forward), transaction.get(reverse)]);
-  if (a.exists || b.exists) {
-    throw new HttpsError('permission-denied', 'This interaction is unavailable.');
-  }
-}
-
 function validateTarget(targetUid, actorUid) {
   if (typeof targetUid !== 'string' || targetUid.length < 1 || targetUid.length > 128 || targetUid === actorUid) {
     throw new HttpsError('invalid-argument', 'Choose a valid member.');
@@ -178,12 +150,13 @@ exports.blockMember = onCall(async request => {
 
   return db.runTransaction(async transaction => {
     const own = await transaction.get(db.collection('profiles').doc(uid));
+    const account = await transaction.get(db.collection('users').doc(uid));
     const target = await transaction.get(targetRef);
     const existingBlock = await transaction.get(blockRef);
     const match = await transaction.get(matchRef);
     const conversation = await transaction.get(conversationRef);
     if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
-        own.data().emailVerified !== true) {
+        own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
     if (!target.exists) throw new HttpsError('not-found', 'Member profile not found.');
@@ -218,9 +191,10 @@ exports.submitSafetyReport = onCall(async request => {
   const targetRef = db.collection('profiles').doc(targetUid);
   await db.runTransaction(async transaction => {
     const own = await transaction.get(db.collection('profiles').doc(uid));
+    const account = await transaction.get(db.collection('users').doc(uid));
     const target = await transaction.get(targetRef);
     if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
-        own.data().emailVerified !== true) {
+        own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
     if (!target.exists) throw new HttpsError('not-found', 'Member profile not found.');
