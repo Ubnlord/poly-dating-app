@@ -67,7 +67,9 @@ service cloud.firestore {
         && request.resource.data.age <= 120
         && request.resource.data.discoveryEnabled is bool
         && request.resource.data.emailVerified == request.auth.token.email_verified
-        && request.resource.data.verificationStatus == 'unverified';
+        && request.resource.data.verificationStatus == 'unverified'
+        && (!('imagePath' in request.resource.data)
+          || request.resource.data.imagePath == 'profilePhotos/' + uid + '/avatar');
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name', 'age', 'gender', 'bio', 'school', 'department', 'level',
@@ -75,7 +77,9 @@ service cloud.firestore {
           'languages', 'imagePath', 'discoveryEnabled', 'updatedAt'
         ])
         && request.resource.data.age is int && request.resource.data.age >= 18
-        && request.resource.data.age <= 120;
+        && request.resource.data.age <= 120
+        && (!('imagePath' in request.resource.data)
+          || request.resource.data.imagePath == 'profilePhotos/' + uid + '/avatar');
       allow delete: if false;
     }
 
