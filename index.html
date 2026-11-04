@@ -515,7 +515,7 @@ if(!Number.isInteger(safeProfile.age)||safeProfile.age<18||safeProfile.age>120)t
 if(!safeProfile.name||!safeProfile.school||!safeProfile.department)throw new Error('Complete your name, school, and department.');
 if(!existing.exists){
 safeProfile.uid=user.uid;
-safeProfile.emailVerified:true;
+safeProfile.emailVerified=user.emailVerified;
 safeProfile.verificationStatus='unverified';
 safeProfile.createdAt=firebase.firestore.FieldValue.serverTimestamp();
 }
