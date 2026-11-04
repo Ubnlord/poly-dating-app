@@ -111,6 +111,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const listConversationMessages = httpsCallable(functions, 'listConversationMessages');
   const sendConversationMessage = httpsCallable(functions, 'sendConversationMessage');
   const exportMyData = httpsCallable(functions, 'exportMyData');
+  const listMyBlocks = httpsCallable(functions, 'listMyBlocks');
 
   const firstPage = await discover({ limit: 20 });
   assert.ok(firstPage.data.profiles.some(profile => profile.uid === bobUid));
@@ -164,6 +165,8 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const blockSnapshot = await adminDb.collection('blocks').doc(aliceUid + '_' + bobUid).get();
   assert.equal(blockSnapshot.exists, true);
   assert.equal((await adminDb.collection('matches').doc(reciprocalLike.data.matchId).get()).data().status, 'blocked');
+  const blockedList = await listMyBlocks({});
+  assert.ok(blockedList.data.blocks.some(item => item.targetUid === bobUid));
   const matchesAfterBlock = await listMyMatches({});
   assert.equal(matchesAfterBlock.data.matches.some(match => match.uid === bobUid), false);
   await assert.rejects(
@@ -185,6 +188,8 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   
   const unblocked = await unblockMember({ targetUid: bobUid });
   assert.equal(unblocked.data.ok, true);
+  const blocksAfterUnblock = await listMyBlocks({});
+  assert.equal(blocksAfterUnblock.data.blocks.some(item => item.targetUid === bobUid), false);
   const aliceRelike = await sendLike({ targetUid: bobUid, kind: 'like' });
   assert.equal(aliceRelike.data.matched, false);
   await signOut(auth);
