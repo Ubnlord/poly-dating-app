@@ -356,10 +356,16 @@ async function verifyActiveConversation(uid, conversationId) {
   }
   const matchRef = db.collection('matches').doc(conversationId);
   const conversationRef = db.collection('conversations').doc(conversationId);
-  const [match, conversation] = await Promise.all([matchRef.get(), conversationRef.get()]);
+  const [match, conversation, profile, account] = await Promise.all([
+    matchRef.get(), conversationRef.get(),
+    db.collection('profiles').doc(uid).get(),
+    db.collection('users').doc(uid).get()
+  ]);
   if (!match.exists || !conversation.exists || match.data().status !== 'active' ||
       conversation.data().status !== 'active' || !Array.isArray(match.data().memberIds) ||
-      !match.data().memberIds.includes(uid)) {
+      !match.data().memberIds.includes(uid) || !profile.exists ||
+      !Number.isInteger(profile.data().age) || profile.data().age < 18 ||
+      profile.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
     throw new HttpsError('permission-denied', 'You do not have access to this conversation.');
   }
   const otherUid = match.data().memberIds.find(memberId => memberId !== uid);
