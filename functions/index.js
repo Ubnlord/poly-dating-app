@@ -649,3 +649,35 @@ exports.unmatchMember = onCall(async request => {
   await db.recursiveDelete(conversationRef.collection('messages'));
   return result;
 });
+
+
+exports.undoLastInteraction = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const { targetUid } = request.data || {};
+  validateTarget(targetUid, uid);
+  const matchId = matchDocumentId(uid, targetUid);
+  const matchRef = db.collection('matches').doc(matchId);
+  const likeRef = db.collection('likes').doc(likeDocumentId(uid, targetUid));
+  return db.runTransaction(async transaction => {
+    const own = await transaction.get(db.collection('profiles').doc(uid));
+    const account = await transaction.get(db.collection('users').doc(uid));
+    const match = await transaction.get(matchRef);
+    const like = await transaction.get(likeRef);
+    const [forwardBlock, reverseBlock] = await Promise.all([
+      transaction.get(db.collection('blocks').doc(uid + '_' + targetUid)),
+      transaction.get(db.collection('blocks').doc(targetUid + '_' + uid))
+    ]);
+    if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
+        own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+      throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
+    }
+    if (forwardBlock.exists || reverseBlock.exists) {
+      throw new HttpsError('permission-denied', 'This interaction cannot be undone.');
+    }
+    if (match.exists && match.data().status === 'active') {
+      throw new HttpsError('failed-precondition', 'You already have a mutual match. Use the unmatch action instead.');
+    }
+    if (like.exists) transaction.delete(likeRef);
+    return { ok: true, hadInteraction: like.exists };
+  });
+});
