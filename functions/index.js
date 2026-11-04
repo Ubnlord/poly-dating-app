@@ -604,3 +604,48 @@ exports.listMyBlocks = onCall(async request => {
   }));
   return { blocks };
 });
+
+
+exports.unmatchMember = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const { targetUid } = request.data || {};
+  validateTarget(targetUid, uid);
+  const matchId = matchDocumentId(uid, targetUid);
+  const matchRef = db.collection('matches').doc(matchId);
+  const conversationRef = db.collection('conversations').doc(matchId);
+  const ownLikeRef = db.collection('likes').doc(likeDocumentId(uid, targetUid));
+  const otherLikeRef = db.collection('likes').doc(likeDocumentId(targetUid, uid));
+  const auditRef = db.collection('adminAudit').doc();
+
+  const result = await db.runTransaction(async transaction => {
+    const own = await transaction.get(db.collection('profiles').doc(uid));
+    const account = await transaction.get(db.collection('users').doc(uid));
+    const match = await transaction.get(matchRef);
+    const conversation = await transaction.get(conversationRef);
+    const ownLike = await transaction.get(ownLikeRef);
+    const otherLike = await transaction.get(otherLikeRef);
+    if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
+        own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
+      throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
+    }
+    if (!match.exists || !Array.isArray(match.data().memberIds) || !match.data().memberIds.includes(uid)) {
+      throw new HttpsError('not-found', 'Match not found.');
+    }
+    if (match.data().status === 'unmatched') return { ok: true, alreadyUnmatched: true };
+    if (match.data().status !== 'active') {
+      throw new HttpsError('failed-precondition', 'This match is not active.');
+    }
+    if (conversation.exists) {
+      transaction.update(conversationRef, { status: 'unmatched', updatedAt: FieldValue.serverTimestamp() });
+    }
+    transaction.update(matchRef, { status: 'unmatched', updatedAt: FieldValue.serverTimestamp() });
+    if (ownLike.exists) transaction.delete(ownLikeRef);
+    if (otherLike.exists) transaction.delete(otherLikeRef);
+    transaction.create(auditRef, {
+      action: 'member_unmatched', actorUid: uid, targetUid, createdAt: FieldValue.serverTimestamp()
+    });
+    return { ok: true, alreadyUnmatched: false };
+  });
+  await db.recursiveDelete(conversationRef.collection('messages'));
+  return result;
+});
