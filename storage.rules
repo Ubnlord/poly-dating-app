@@ -9,10 +9,25 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/profiles/$(request.auth.uid)).data.age >= 18;
     }
 
-    // Profile photos: verified adults may read photos for discovery.
+    // A member may read their own avatar. Other adults can read it only while
+    // the owner is discoverable and neither side has blocked the other.
+    function canReadAvatar(uid) {
+      let profilePath = /databases/(default)/documents/profiles/$(uid);
+      return signedInVerifiedAdult()
+        && firestore.exists(profilePath)
+        && (request.auth.uid == uid || (
+          firestore.get(profilePath).data.age is int
+          && firestore.get(profilePath).data.age >= 18
+          && firestore.get(profilePath).data.emailVerified == true
+          && firestore.get(profilePath).data.discoveryEnabled == true
+          && !firestore.exists(/databases/(default)/documents/blocks/$(request.auth.uid + '_' + uid))
+          && !firestore.exists(/databases/(default)/documents/blocks/$(uid + '_' + request.auth.uid))
+        ));
+    }
+
     // Only the owner may upload/delete their own avatar, and only image files up to 5 MiB.
     match /profilePhotos/{uid}/{fileName} {
-      allow read: if signedInVerifiedAdult();
+      allow read: if canReadAvatar(uid);
       allow create, update: if signedInVerifiedAdult()
         && request.auth.uid == uid
         && fileName == 'avatar'
