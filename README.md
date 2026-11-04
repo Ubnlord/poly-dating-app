@@ -6,7 +6,7 @@ PolyConnect is a mobile-first dating app prototype for adults (18+) at Nigerian 
 
 The complete product roadmap, proposed repository tree, data model, security/privacy requirements, test matrix, and beta acceptance criteria are documented in [docs/PRODUCT_PLAN_AND_ARCHITECTURE.md](docs/PRODUCT_PLAN_AND_ARCHITECTURE.md).
 
-That document describes the **target architecture**, not files or capabilities already implemented. The current app remains a single-page prototype; verify behavior in code and tests before treating any feature as production-ready. Firebase profile persistence and profile-photo upload are connected, but discovery, likes/matches, conversations, reports, blocks, and moderation remain incomplete or browser-local.
+That document describes the **target architecture**, not files or capabilities already implemented. The current app remains a single-page prototype; verify behavior in code and tests before treating any feature as production-ready. Firebase profile persistence and profile-photo upload are connected. Callable Cloud Functions now provide paginated discovery, rate-limited likes/passes/super-likes, mutual-match and conversation creation, blocking/unblocking, and safety-report submission. The web UI calls these functions for discovery, swipes, reports, and blocks. Private messaging, moderator tooling, account deletion, and production deployment remain incomplete.
 
 ## Current prototype capabilities
 
@@ -25,12 +25,12 @@ The existing single-page app includes a mix of browser-local demo features and F
 
 ## Firebase configuration
 
-The existing `index.html` configures the Firebase web app `poly-dating-app-5354c` and loads Firebase App, Authentication, Firestore, Storage, and Analytics SDKs from the CDN. Profile metadata is saved in Firestore; uploaded avatar files are stored under `profilePhotos/{uid}/avatar`.
+The existing `index.html` configures the Firebase web app `poly-dating-app-5354c` and loads Firebase App, Authentication, Firestore, Storage, Functions, and Analytics SDKs from the CDN. Profile metadata is saved in Firestore; uploaded avatar files are stored under `profilePhotos/{uid}/avatar`. Trusted callable functions live in `functions/index.js` and are configured for the `us-central1` region.
 
 For connected-backend testing, verify that the intended Firebase project has:
 1. Email/Password authentication enabled.
 2. Cloud Firestore provisioned.
-3. Correct Firestore and Storage security rules.
+3. Correct Firestore and Storage security rules; likes and reports are callable-only writes.
 4. Any required indexes deployed.
 5. Analytics enabled only if desired and disclosed in the privacy notice.
 
@@ -38,7 +38,7 @@ Do not put service-account credentials, private keys, or other secrets in browse
 
 ## Before a public beta
 
-The prototype must not be considered production-ready until real multi-user discovery and chat, reviewed Firestore/Storage rules, backend-backed reporting and moderation, reliable account deletion/export, privacy/terms, and automated functional/security tests are complete. Use Firebase Emulator Suite or an isolated test project first; do not test risky migrations against real member data.
+The prototype must not be considered production-ready until private multi-user messaging, reviewed and deployed Firestore/Storage rules and Cloud Functions, moderator tooling, reliable account deletion/export, privacy/terms, and successful automated functional/security tests are complete. Deploy functions and rules only to the intended Firebase project after reviewing the project ID and release plan. Use Firebase Emulator Suite or an isolated test project first; do not test risky migrations against real member data.
 
 ## Deployment visibility check
 
