@@ -269,8 +269,9 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div id="cards-container"></div>
 <div id="empty-state" class="hidden text-center py-20">
 <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-4xl"><i class="fas fa-check-circle"></i></div>
-<h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Discovery is not connected yet</h3>
-<p class="text-gray-500 dark:text-gray-400 mb-6">No real member profiles are available in discovery yet. Profiles will appear here after the secure shared discovery service is connected.</p>
+<h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">No members in this batch</h3>
+<p class="text-gray-500 dark:text-gray-400 mb-6">No eligible members are available in this discovery batch. Try loading more profiles later.</p>
+<button id="load-more-profiles" onclick="loadDiscoveryProfiles(false)" class="px-6 py-3 rounded-full bg-purple-600 text-white font-medium hover:bg-purple-700 transition shadow-lg">Load more members</button>
 </div>
 </div>
 
