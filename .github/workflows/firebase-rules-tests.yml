@@ -22,6 +22,8 @@ jobs:
           node-version: 20
       - name: Install test dependencies
         run: npm install --no-audit --no-fund
+      - name: Install Firebase Functions dependencies
+        run: npm --prefix functions install --no-audit --no-fund
       - name: Check inline JavaScript syntax
         run: npm run test:syntax
       - name: Run Firestore and Storage emulator tests
