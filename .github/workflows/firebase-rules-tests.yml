@@ -26,5 +26,7 @@ jobs:
         run: npm --prefix functions install --no-audit --no-fund
       - name: Check inline JavaScript syntax
         run: npm run test:syntax
-      - name: Run Firestore and Storage emulator tests
+      - name: Check Cloud Functions syntax
+        run: npm run check:functions
+      - name: Run Firebase rules and callable integration tests
         run: npm run test:emulators
