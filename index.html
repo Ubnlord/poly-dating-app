@@ -506,6 +506,24 @@ renderCards();
 finally{discoveryLoading=false;const button=document.getElementById('load-more-profiles');if(button)button.classList.toggle('hidden',!discoveryHasMore);}
 }
 
+async function loadMyMatches(){
+if(!functionsReady()){localStorage.setItem('polyconnect_matches','[]');renderConversations();return;}
+try{
+const result=await firebaseFunctions.httpsCallable('listMyMatches')({});
+const rows=Array.isArray(result.data.matches)?result.data.matches:[];
+const mapped=await Promise.all(rows.map(async match=>{
+const p=match.profile||{};
+let image='https://ui-avatars.com/api/?name='+encodeURIComponent(p.name||'Member')+'&background=8b5cf6&color=fff&size=400';
+if(p.imagePath&&firebaseStorage){try{image=await firebaseStorage.ref(p.imagePath).getDownloadURL();}catch(e){console.warn('Match photo unavailable:',e);}}
+const profile=Object.assign({},p,{id:match.uid,major:p.department||'',image,verified:false});
+return {id:match.uid,conversationId:match.matchId,name:profile.name,image,profile,lastMessage:match.lastMessage||null};
+}));
+mapped.forEach(match=>{const i=profiles.findIndex(p=>String(p.id)===String(match.id));if(i>=0)profiles[i]=match.profile;else profiles.push(match.profile);});
+localStorage.setItem('polyconnect_matches',JSON.stringify(mapped));
+renderConversations();
+}catch(error){console.error('Could not load matches:',error);showToast('Could not load your matches.','error');}
+}
+
 async function loadFirebaseProfile(uid){
 if(!firebaseReady()||!uid)throw new Error('Firebase is not ready.');
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
@@ -565,7 +583,7 @@ image=await photoRef.getDownloadURL();
 return {...safeProfile,image};
 }
 
-let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
+let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentChatProfileId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
 
 function init(){
 initFirebase();
