@@ -1000,15 +1000,20 @@ if(discoveryHasMore)loadDiscoveryProfiles(false);
 
 function resetProfiles(){swipeHistory=[];renderCards();}
 
-function undoSwipe(){
-const last=swipeHistory.pop();
+async function undoSwipe(){
+const last=swipeHistory[swipeHistory.length-1];
 if(!last){showToast('Nothing to undo yet','error');return;}
+if(!functionsReady()){showToast('Secure undo is unavailable.','error');return;}
+try{
+await firebaseFunctions.httpsCallable('undoLastInteraction')({targetUid:String(last.id)});
+swipeHistory.pop();
 renderCards();
 const cards=[...document.querySelectorAll('.profile-card')];
 cards.forEach(card=>card.classList.add('hidden'));
 const target=cards.find(card=>String(card.dataset.id)===String(last.id));
-if(target){target.classList.remove('hidden','swipe-left','swipe-right');target.classList.add('fade-in');showToast('Last swipe restored');}
-else showToast('That profile is not in the current filters','error');
+if(target){target.classList.remove('hidden','swipe-left','swipe-right');target.classList.add('fade-in');showToast('Last swipe undone.');}
+else showToast('Interaction undone, but this member is outside the current filters.','error');
+}catch(error){console.error('Undo failed:',error);showToast(error.message||'Could not undo this interaction.','error');}
 }
 
 function editMyProfile(){
