@@ -88,8 +88,11 @@ after(async () => {
   }
   for (const uid of [aliceUid, bobUid]) {
     if (!uid) continue;
-    for (const collection of ['profiles', 'users', 'rateLimits']) {
-      await adminDb.collection(collection).doc(collection === 'rateLimits' ? uid + '_likes' : uid).delete().catch(() => {});
+    for (const collection of ['profiles', 'users']) {
+      await adminDb.collection(collection).doc(uid).delete().catch(() => {});
+    }
+    for (const suffix of ['_likes', '_reports', '_messages']) {
+      await adminDb.collection('rateLimits').doc(uid + suffix).delete().catch(() => {});
     }
     await adminAuth.deleteUser(uid).catch(() => {});
   }
