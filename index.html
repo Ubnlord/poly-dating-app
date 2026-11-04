@@ -482,6 +482,29 @@ showWizard();
 });
 }
 
+async function loadDiscoveryProfiles(reset=true){
+if(!functionsReady()){profiles=[];renderCards();return;}
+if(discoveryLoading)return;
+if(reset){discoveryCursor=null;discoveryHasMore=true;profiles=[];}
+if(!discoveryHasMore){renderCards();return;}
+discoveryLoading=true;
+try{
+const response=await firebaseFunctions.httpsCallable('listDiscoveryProfiles')({limit:20,cursor:discoveryCursor});
+const rows=Array.isArray(response.data.profiles)?response.data.profiles:[];
+const mapped=await Promise.all(rows.map(async p=>{
+let image='https://ui-avatars.com/api/?name='+encodeURIComponent(p.name||'Member')+'&background=8b5cf6&color=fff&size=400';
+if(p.imagePath&&firebaseStorage){try{image=await firebaseStorage.ref(p.imagePath).getDownloadURL();}catch(e){console.warn('Profile image unavailable',e);}}
+return Object.assign({},p,{id:p.uid,major:p.department||'',image,verified:false});
+}));
+const known=new Set(profiles.map(p=>p.id));
+profiles.push(...mapped.filter(p=>!known.has(p.id)));
+discoveryCursor=response.data.nextCursor||null;
+discoveryHasMore=Boolean(response.data.hasMore);
+renderCards();
+}catch(error){console.error('Discovery failed',error);showToast('Could not load discovery. Please try again.','error');}
+finally{discoveryLoading=false;const button=document.getElementById('load-more-profiles');if(button)button.classList.toggle('hidden',!discoveryHasMore);}
+}
+
 async function loadFirebaseProfile(uid){
 if(!firebaseReady()||!uid)throw new Error('Firebase is not ready.');
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
