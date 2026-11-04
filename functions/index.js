@@ -376,11 +376,12 @@ async function verifyActiveConversation(uid, conversationId) {
   }
   const otherUid = match.data().memberIds.find(memberId => memberId !== uid);
   if (!otherUid) throw new HttpsError('permission-denied', 'Invalid conversation membership.');
-  const [forwardBlock, reverseBlock] = await Promise.all([
+  const [forwardBlock, reverseBlock, otherAccount] = await Promise.all([
     db.collection('blocks').doc(uid + '_' + otherUid).get(),
-    db.collection('blocks').doc(otherUid + '_' + uid).get()
+    db.collection('blocks').doc(otherUid + '_' + uid).get(),
+    db.collection('users').doc(otherUid).get()
   ]);
-  if (forwardBlock.exists || reverseBlock.exists) {
+  if (forwardBlock.exists || reverseBlock.exists || (otherAccount.exists && otherAccount.data().suspended === true)) {
     throw new HttpsError('permission-denied', 'This conversation is no longer available.');
   }
   return { matchRef, conversationRef, otherUid };
@@ -429,16 +430,17 @@ exports.sendConversationMessage = onCall(async request => {
     const otherUid = match.data().memberIds.find(memberId => memberId !== uid);
     if (!otherUid) throw new HttpsError('permission-denied', 'Invalid conversation membership.');
 
-    const [conversation, forwardBlock, reverseBlock, profile, account, rate] = await Promise.all([
+    const [conversation, forwardBlock, reverseBlock, profile, account, otherAccount, rate] = await Promise.all([
       transaction.get(conversationRef),
       transaction.get(db.collection('blocks').doc(uid + '_' + otherUid)),
       transaction.get(db.collection('blocks').doc(otherUid + '_' + uid)),
       transaction.get(db.collection('profiles').doc(uid)),
       transaction.get(db.collection('users').doc(uid)),
+      transaction.get(db.collection('users').doc(otherUid)),
       transaction.get(rateRef)
     ]);
     if (!conversation.exists || conversation.data().status !== 'active' ||
-        forwardBlock.exists || reverseBlock.exists) {
+        forwardBlock.exists || reverseBlock.exists || (otherAccount.exists && otherAccount.data().suspended === true)) {
       throw new HttpsError('permission-denied', 'This conversation is no longer available.');
     }
     if (!profile.exists || !Number.isInteger(profile.data().age) || profile.data().age < 18 ||
