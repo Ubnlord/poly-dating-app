@@ -546,6 +546,8 @@ localStorage.removeItem('polyconnect_profiles');
 if(localStorage.getItem('polyconnect_dark')==='true'){document.documentElement.classList.add('dark');const i=document.getElementById('dark-icon');if(i)i.className='fas fa-sun';}
 localStorage.removeItem('polyconnect_users');
 localStorage.removeItem('polyconnect_user');
+setupWizardInterests();
+setupReactionMenu();
 }
 
 function saveProfiles(){localStorage.setItem('polyconnect_profiles',JSON.stringify(profiles));}
