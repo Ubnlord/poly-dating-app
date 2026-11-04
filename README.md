@@ -16,12 +16,12 @@ The existing single-page app includes a mix of browser-local demo features and F
 - 18+ declaration during sign up and password reset when Firebase Auth is available.
 - Profile onboarding with school, department, interests, relationship goals, and profile photo uploads to Firebase Storage (JPG/PNG/WebP, up to 5 MiB), subject to authenticated-adult Storage rules.
 - Optional selfie camera preview only; it is not identity or student verification.
-- Discovery filters, likes, passes, super likes, and demo matching UI are present, but no fictional sample members are shown to signed-in users while the shared discovery backend is incomplete.
+- Discovery filters, paginated member discovery, likes, passes, super likes, and mutual matching use trusted Firebase callable functions; no fictional sample members are shown.
 - Private text conversations are available only after mutual matches; messages are sent through rate-limited callable functions and streamed from Firestore. Image attachments, reactions, read receipts, and push notifications are not enabled.
-- Safety Center controls for backend-backed reporting, blocking, and unblocking; moderator review is not yet implemented.
+- Safety controls submit backend-backed reports, blocks, unblocks, and unmatches; moderator review and a cross-device safety-records view are not yet implemented.
 - Event-interest saving, profile editing, secure Firebase account-data export, and a clearly labeled local-cache clearing control (not cloud account deletion).
 
-**Important:** local demo data is not shared across accounts/devices and does not provide production identity, matching, messaging, or moderation. UI controls alone do not enforce security.
+**Important:** some secondary UI state remains browser-local. Shared discovery, mutual matching, and text messaging use Firebase, but the app does not provide identity/student verification or a moderator workflow. UI controls alone do not enforce security.
 
 ## Firebase configuration
 
@@ -38,7 +38,7 @@ Do not put service-account credentials, private keys, or other secrets in browse
 
 ## Before a public beta
 
-The prototype must not be considered production-ready until private multi-user messaging, reviewed and deployed Firestore/Storage rules and Cloud Functions, moderator tooling, reviewed cloud account deletion and retention/export policy, privacy/terms, and successful automated functional/security tests are complete. Deploy functions and rules only to the intended Firebase project after reviewing the project ID and release plan. Use Firebase Emulator Suite or an isolated test project first; do not test risky migrations against real member data.
+The prototype must not be considered production-ready until the latest emulator tests pass, reviewed Firestore/Storage rules and Cloud Functions are deployed to the intended project, moderator tooling is in place, cloud account deletion and retention/export policy are reviewed, privacy/terms are published, and mobile/accessibility/security checks are complete. Deploy functions and rules only to the intended Firebase project after reviewing the project ID and release plan. Use Firebase Emulator Suite or an isolated test project first; do not test risky migrations against real member data.
 
 ## Deployment visibility check
 
