@@ -231,3 +231,72 @@ exports.submitSafetyReport = onCall(async request => {
   });
   return { ok: true, reportId: reportRef.id };
 });
+
+
+exports.listDiscoveryProfiles = onCall(async request => {
+  const uid = requireVerifiedAdult(request);
+  const requestedLimit = Number(request.data && request.data.limit);
+  const pageSize = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 20) : 20;
+  const cursor = request.data && request.data.cursor;
+  if (cursor && (!Number.isInteger(cursor.age) || typeof cursor.uid !== 'string' || !cursor.uid)) {
+    throw new HttpsError('invalid-argument', 'Invalid discovery cursor.');
+  }
+
+  const own = await db.collection('profiles').doc(uid).get();
+  if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
+      own.data().emailVerified !== true || own.data().discoveryEnabled !== true) {
+    throw new HttpsError('failed-precondition', 'Complete an eligible profile and enable discovery first.');
+  }
+  const account = await db.collection('users').doc(uid).get();
+  if (account.exists && account.data().suspended === true) {
+    throw new HttpsError('permission-denied', 'This account is currently restricted.');
+  }
+
+  const [blockedByMe, blockedMe] = await Promise.all([
+    db.collection('blocks').where('blockerUid', '==', uid).get(),
+    db.collection('blocks').where('blockedUid', '==', uid).get()
+  ]);
+  const excluded = new Set([uid]);
+  blockedByMe.docs.forEach(doc => excluded.add(doc.data().blockedUid));
+  blockedMe.docs.forEach(doc => excluded.add(doc.data().blockerUid));
+
+  let query = db.collection('profiles')
+    .where('age', '>=', 18)
+    .orderBy('age')
+    .orderBy(admin.firestore.FieldPath.documentId())
+    .limit(100);
+  if (cursor) query = query.startAfter(cursor.age, cursor.uid);
+  const snapshot = await query.get();
+  const eligible = snapshot.docs.filter(doc => {
+    const profile = doc.data();
+    return !excluded.has(doc.id) && profile.emailVerified === true &&
+      profile.discoveryEnabled === true && Number.isInteger(profile.age) && profile.age >= 18;
+  });
+  const page = eligible.slice(0, pageSize);
+  const profiles = page.map(doc => {
+    const p = doc.data();
+    return {
+      uid: doc.id,
+      name: p.name || '',
+      age: p.age,
+      gender: p.gender || '',
+      bio: p.bio || '',
+      school: p.school || '',
+      department: p.department || '',
+      level: p.level || '',
+      state: p.state || '',
+      interests: Array.isArray(p.interests) ? p.interests.slice(0, 20) : [],
+      hobbies: p.hobbies || '',
+      relationshipGoal: p.relationshipGoal || '',
+      languages: p.languages || '',
+      imagePath: p.imagePath || ''
+    };
+  });
+  const cursorDoc = page.length ? page[page.length - 1] :
+    (eligible.length === 0 && snapshot.docs.length ? snapshot.docs[snapshot.docs.length - 1] : null);
+  return {
+    profiles,
+    nextCursor: cursorDoc ? { age: cursorDoc.data().age, uid: cursorDoc.id } : null,
+    hasMore: snapshot.docs.length === 100
+  };
+});
