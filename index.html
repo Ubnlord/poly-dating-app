@@ -955,8 +955,9 @@ try{
 const result=await firebaseFunctions.httpsCallable('sendLike')({targetUid:pid,kind:'like'});
 swipeHistory.push({id:pid,filter:currentFilter});
 if(profile)currentMatchProfile=profile;
+if(result.data.matched)await loadMyMatches();
 card.classList.add('swipe-right');
-setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Messaging is being connected next.':'Like sent securely.');nextCard();},350);
+setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Open your Messages tab to chat.':'Like sent securely.');nextCard();},350);
 }catch(error){console.error('Like failed:',error);showToast(error.message||'Could not send like.','error');}
 }
 
@@ -981,8 +982,9 @@ try{
 const result=await firebaseFunctions.httpsCallable('sendLike')({targetUid:pid,kind:'superLike'});
 swipeHistory.push({id:pid,filter:currentFilter});
 if(profile)currentMatchProfile=profile;
+if(result.data.matched)await loadMyMatches();
 card.style.transform='scale(1.1)';card.style.opacity='0';
-setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Messaging is being connected next.':'Super like sent securely.');nextCard();},300);
+setTimeout(()=>{showToast(result.data.matched?'It is a mutual match! Open your Messages tab to chat.':'Super like sent securely.');nextCard();},300);
 }catch(error){console.error('Super like failed:',error);showToast(error.message||'Could not send super like.','error');}
 }
 
@@ -1038,7 +1040,7 @@ try{
 await firebaseFunctions.httpsCallable('blockMember')({targetUid:id});
 const blocked=getBlockedIds();if(!blocked.includes(id)){blocked.push(id);localStorage.setItem('polyconnect_blocked',JSON.stringify(blocked));}
 profiles=profiles.filter(p=>String(p.id)!==id);
-unmatchUser(id,false);if(typeof closeChat==='function')closeChat();renderCards();renderConversations();renderSafetyCenter();
+unmatchUser(id,false);if(typeof closeChat==='function')closeChat();renderCards();await loadMyMatches();renderSafetyCenter();
 if(notify)showToast('Member blocked. They will no longer appear in discovery.');
 }catch(error){console.error('Block failed:',error);showToast(error.message||'Could not block this member.','error');}
 }
