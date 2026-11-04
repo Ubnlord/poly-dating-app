@@ -85,7 +85,7 @@ service cloud.firestore {
         ])
         && request.resource.data.uid == uid
         && validProfileFields(request.resource.data, true)
-        && validProfileFields(request.resource.data, false)
+        && validProfileFields(request.resource.data, true)
         && request.resource.data.age is int && request.resource.data.age >= 18
         && request.resource.data.age <= 120
         && request.resource.data.discoveryEnabled is bool
