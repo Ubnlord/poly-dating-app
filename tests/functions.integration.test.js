@@ -80,7 +80,10 @@ after(async () => {
         ? adminDb.collection(collection).where(field, 'array-contains', uid)
         : adminDb.collection(collection).where(field, '==', uid);
       const snapshot = await query.get();
-      for (const document of snapshot.docs) await document.ref.delete();
+      for (const document of snapshot.docs) {
+        if (collection === 'conversations') await adminDb.recursiveDelete(document.ref);
+        else await document.ref.delete();
+      }
     }
   }
   for (const uid of [aliceUid, bobUid]) {
