@@ -112,6 +112,7 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   const sendConversationMessage = httpsCallable(functions, 'sendConversationMessage');
   const exportMyData = httpsCallable(functions, 'exportMyData');
   const listMyBlocks = httpsCallable(functions, 'listMyBlocks');
+  const unmatchMember = httpsCallable(functions, 'unmatchMember');
 
   const firstPage = await discover({ limit: 20 });
   assert.ok(firstPage.data.profiles.some(profile => profile.uid === bobUid));
@@ -198,5 +199,15 @@ test('discovery, mutual matching, blocking, and reporting are enforced by truste
   assert.equal(bobRelike.data.matched, true);
   const reopenedMessages = await listConversationMessages({ conversationId: reciprocalLike.data.matchId });
   assert.equal(reopenedMessages.data.messages.length, 0);
+  const ended = await unmatchMember({ targetUid: aliceUid });
+  assert.equal(ended.data.ok, true);
+  assert.equal((await adminDb.collection('matches').doc(reciprocalLike.data.matchId).get()).data().status, 'unmatched');
+  const matchesAfterUnmatch = await listMyMatches({});
+  assert.equal(matchesAfterUnmatch.data.matches.some(match => match.uid === aliceUid), false);
+  await assert.rejects(
+    sendConversationMessage({ conversationId: reciprocalLike.data.matchId, text: 'This must fail after unmatch' }),
+    error => error && (error.code === 'functions/permission-denied' || error.code === 'permission-denied')
+  );
+
 
 });
