@@ -6,7 +6,7 @@ PolyConnect is a mobile-first dating app prototype for adults (18+) at Nigerian 
 
 The complete product roadmap, proposed repository tree, data model, security/privacy requirements, test matrix, and beta acceptance criteria are documented in [docs/PRODUCT_PLAN_AND_ARCHITECTURE.md](docs/PRODUCT_PLAN_AND_ARCHITECTURE.md).
 
-That document describes the **target architecture**, not files or capabilities already implemented. The current app remains a single-page prototype; verify behavior in code and tests before treating any feature as production-ready. Firebase profile persistence and profile-photo upload are connected. Callable Cloud Functions now provide paginated discovery, rate-limited likes/passes/super-likes, mutual-match and conversation creation, blocking/unblocking, safety reports, match listing, and rate-limited text-message sending. The web UI uses these services for discovery, swipes, reports, blocks, and text conversations; matched conversation messages stream from Firestore in real time. Photo messages, reactions, dedicated unmatching, moderator tooling, cloud account deletion, and production deployment remain incomplete.
+That document describes the **target architecture**, not files or capabilities already implemented. The current app remains a single-page prototype; verify behavior in code and tests before treating any feature as production-ready. Firebase profile persistence and profile-photo upload are connected. Callable Cloud Functions now provide paginated discovery, rate-limited likes/passes/super-likes, mutual-match and conversation creation, blocking/unblocking, unmatching, safety reports, match listing, account data export, and rate-limited text-message sending. The web UI uses these services for discovery, swipes, reports, blocks, and text conversations; matched conversation messages stream from Firestore in real time. Photo messages, reactions, moderator tooling, cloud account deletion, and production deployment remain incomplete.
 
 ## Current prototype capabilities
 
@@ -18,7 +18,7 @@ The existing single-page app includes a mix of browser-local demo features and F
 - Optional selfie camera preview only; it is not identity or student verification.
 - Discovery filters, likes, passes, super likes, and demo matching UI are present, but no fictional sample members are shown to signed-in users while the shared discovery backend is incomplete.
 - Private text conversations are available only after mutual matches; messages are sent through rate-limited callable functions and streamed from Firestore. Image attachments, reactions, read receipts, and push notifications are not enabled.
-- Safety Center controls for backend-backed reporting, blocking, and unblocking; dedicated unmatching and moderator review are not yet implemented.
+- Safety Center controls for backend-backed reporting, blocking, and unblocking; moderator review is not yet implemented.
 - Event-interest saving, profile editing, secure Firebase account-data export, and a clearly labeled local-cache clearing control (not cloud account deletion).
 
 **Important:** local demo data is not shared across accounts/devices and does not provide production identity, matching, messaging, or moderation. UI controls alone do not enforce security.
