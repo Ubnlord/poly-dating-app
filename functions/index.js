@@ -281,7 +281,7 @@ exports.listDiscoveryProfiles = onCall(async request => {
       department: p.department || '',
       level: p.level || '',
       state: p.state || '',
-      interests: Array.isArray(p.interests) ? p.interests.slice(0, 20) : [],
+      interests: Array.isArray(p.interests) ? p.interests.filter(value => typeof value === 'string').slice(0, 20) : [],
       hobbies: p.hobbies || '',
       relationshipGoal: p.relationshipGoal || '',
       languages: p.languages || '',
@@ -365,7 +365,7 @@ exports.listMyMatches = onCall(async request => {
         department: profile.department || '',
         level: profile.level || '',
         state: profile.state || '',
-        interests: Array.isArray(profile.interests) ? profile.interests.slice(0, 20) : [],
+        interests: Array.isArray(profile.interests) ? profile.interests.filter(value => typeof value === 'string').slice(0, 20) : [],
         relationshipGoal: profile.relationshipGoal || '',
         imagePath: profile.imagePath || ''
       },
