@@ -259,7 +259,7 @@ exports.listDiscoveryProfiles = onCall(async request => {
   return {
     profiles,
     nextCursor: cursorDoc ? { age: cursorDoc.data().age, uid: cursorDoc.id } : null,
-    hasMore: snapshot.docs.length === 100
+    hasMore: eligible.length > pageSize || snapshot.docs.length === 100
   };
 });
 
