@@ -268,7 +268,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <div id="cards-container"></div>
 <div id="empty-state" class="hidden text-center py-20">
 <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 text-4xl"><i class="fas fa-check-circle"></i></div>
-<h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">All caught up!</h3>
+<h3 class="text-xl font-bold text-gray-800 dark:text-white mb-2">Discovery is not connected yet</h3>
 <p class="text-gray-500 dark:text-gray-400 mb-6">No real member profiles are available in discovery yet. Profiles will appear here after the secure shared discovery service is connected.</p>
 </div>
 </div>
@@ -536,8 +536,6 @@ image=await photoRef.getDownloadURL();
 }else if(existing.exists&&existing.data().imagePath){try{image=await firebaseStorage.ref(existing.data().imagePath).getDownloadURL();}catch(storageError){console.warn('Could not resolve existing profile photo:',storageError);}}
 return {...safeProfile,image};
 }
-
-const defaultProfiles=[];
 
 let profiles=[],currentProfileIndex=0,currentFilter='all',wizardStep=1,wizardInterests=[],currentChatId=null,currentMatchProfile=null,selfieDataUrl=null,stream=null,selectedMsgId=null,swipeHistory=[];
 
