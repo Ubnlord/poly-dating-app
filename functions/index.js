@@ -181,11 +181,18 @@ exports.submitSafetyReport = onCall(async request => {
     const own = await transaction.get(db.collection('profiles').doc(uid));
     const account = await transaction.get(db.collection('users').doc(uid));
     const target = await transaction.get(targetRef);
+    const reportLimitRef = db.collection('rateLimits').doc(uid + '_reports');
+    const reportLimit = await transaction.get(reportLimitRef);
     if (!own.exists || !Number.isInteger(own.data().age) || own.data().age < 18 ||
         own.data().emailVerified !== true || (account.exists && account.data().suspended === true)) {
       throw new HttpsError('permission-denied', 'An eligible adult profile is required.');
     }
     if (!target.exists) throw new HttpsError('not-found', 'Member profile not found.');
+    const day = new Date().toISOString().slice(0, 10);
+    const previous = reportLimit.exists ? reportLimit.data() : {};
+    const count = previous.day === day ? Number(previous.count || 0) : 0;
+    if (count >= 5) throw new HttpsError('resource-exhausted', 'Daily report limit reached. Try again tomorrow.');
+    transaction.set(reportLimitRef, { day, count: count + 1, updatedAt: FieldValue.serverTimestamp() });
     transaction.create(reportRef, {
       reporterUid: uid, targetUid, reason, details,
       createdAt: FieldValue.serverTimestamp(), status: 'open'
