@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-storage-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.17.0/firebase-analytics-compat.js"></script>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -135,7 +136,7 @@ input:focus,textarea:focus,select:focus{outline:none}
 <i id="wizard-photo-icon" class="fas fa-camera"></i>
 </div>
 <button onclick="document.getElementById('wizard-photo-input').click()" class="text-purple-600 font-medium text-sm">Upload Photo</button>
-<input type="file" id="wizard-photo-input" accept="image/*" class="hidden" onchange="handlePhotoUpload(event)">
+<input type="file" id="wizard-photo-input" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" class="hidden" onchange="handlePhotoUpload(event)">
 </div>
 <div><label class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Full Name</label><input type="text" id="wiz-name" placeholder="Your full name" class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-sm bg-transparent"></div>
 <div class="grid grid-cols-2 gap-3">
@@ -444,8 +445,8 @@ appId:"1:465289858492:web:c43afae8183b2d7833afb9",
 measurementId:"G-TD810WXVH8"
 };
 
-let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseAnalytics=null;
-const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb);
+let firebaseApp=null,firebaseAuth=null,firebaseDb=null,firebaseStorage=null,firebaseAnalytics=null;
+const firebaseReady=()=>Boolean(firebaseApp&&firebaseAuth&&firebaseDb&&firebaseStorage);
 const hasFirebaseConfig=()=>Object.values(firebaseConfig).every(value=>value&&!value.startsWith('YOUR_'));
 
 function initFirebase(){
@@ -454,6 +455,7 @@ if(!window.firebase){console.warn('Firebase SDK did not load. Authentication is 
 firebaseApp=firebase.initializeApp(firebaseConfig);
 firebaseAuth=firebase.auth();
 firebaseDb=firebase.firestore();
+firebaseStorage=firebase.storage();
 if(firebase.analytics)firebaseAnalytics=firebase.analytics();
 firebaseAuth.onAuthStateChanged(async user=>{
 if(!user)return;
@@ -482,6 +484,7 @@ if(!firebaseReady()||!uid)throw new Error('Firebase is not ready.');
 const snapshot=await firebaseDb.collection('profiles').doc(uid).get();
 if(!snapshot.exists)return null;
 const profile=snapshot.data();
+if(profile.imagePath&&firebaseStorage){try{profile.image=await firebaseStorage.ref(profile.imagePath).getDownloadURL();}catch(storageError){console.warn('Could not load profile photo:',storageError);}}
 if(!profile.image){
 profile.image='https://ui-avatars.com/api/?name='+encodeURIComponent(profile.name||'PolyConnect')+'&background=8b5cf6&color=fff&size=400';
 }
@@ -520,7 +523,19 @@ safeProfile.verificationStatus='unverified';
 safeProfile.createdAt=firebase.firestore.FieldValue.serverTimestamp();
 }
 await profileRef.set(safeProfile,{merge:true});
-return {...safeProfile,image:'https://ui-avatars.com/api/?name='+encodeURIComponent(safeProfile.name)+'&background=8b5cf6&color=fff&size=400'};
+let image='https://ui-avatars.com/api/?name='+encodeURIComponent(safeProfile.name)+'&background=8b5cf6&color=fff&size=400';
+if(typeof profile.image==='string'&&profile.image.startsWith('data:')){
+const response=await fetch(profile.image);
+const blob=await response.blob();
+if(blob.size>5*1024*1024)throw new Error('Profile photo must be 5 MiB or smaller.');
+if(!['image/jpeg','image/png','image/webp'].includes(blob.type))throw new Error('Profile photo must be JPG, PNG, or WebP.');
+const imagePath='profilePhotos/'+user.uid+'/avatar';
+const photoRef=firebaseStorage.ref(imagePath);
+await photoRef.put(blob,{contentType:blob.type});
+await profileRef.set({imagePath,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+image=await photoRef.getDownloadURL();
+}else if(existing.exists&&existing.data().imagePath){try{image=await firebaseStorage.ref(existing.data().imagePath).getDownloadURL();}catch(storageError){console.warn('Could not resolve existing profile photo:',storageError);}}
+return {...safeProfile,image};
 }
 
 const defaultProfiles=[
@@ -638,6 +653,8 @@ function skipWizard(){showToast('Complete your profile and confirm you are 18 or
 
 function handlePhotoUpload(e){
 const file=e.target.files[0];if(!file)return;
+if(!['image/jpeg','image/png','image/webp'].includes(file.type)){showToast('Choose a JPG, PNG, or WebP image.','error');e.target.value='';return;}
+if(file.size>5*1024*1024){showToast('Profile photo must be 5 MiB or smaller.','error');e.target.value='';return;}
 const r=new FileReader();
 r.onload=(ev)=>{document.getElementById('wizard-photo-preview').src=ev.target.result;document.getElementById('wizard-photo-preview').classList.remove('hidden');document.getElementById('wizard-photo-icon').classList.add('hidden');};
 r.readAsDataURL(file);
