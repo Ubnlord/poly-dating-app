@@ -807,7 +807,7 @@ btn.classList.toggle('text-purple-600',active);btn.classList.toggle('text-gray-4
 });
 ['discovery-view','matches-view','events-view','safety-view','my-profile-view'].forEach(id=>document.getElementById(id).classList.add('hidden'));
 if(tab==='discovery')document.getElementById('discovery-view').classList.remove('hidden');
-else if(tab==='matches')document.getElementById('matches-view').classList.remove('hidden');
+else if(tab==='matches'){document.getElementById('matches-view').classList.remove('hidden');loadMyMatches();}
 else if(tab==='events')document.getElementById('events-view').classList.remove('hidden');
 else if(tab==='safety'){document.getElementById('safety-view').classList.remove('hidden');renderSafetyCenter();}
 }
