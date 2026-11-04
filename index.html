@@ -562,6 +562,7 @@ updatedAt:firebase.firestore.FieldValue.serverTimestamp()
 };
 if(!Number.isInteger(safeProfile.age)||safeProfile.age<18||safeProfile.age>120)throw new Error('A valid age of 18 or older is required.');
 if(!safeProfile.name||!safeProfile.school||!safeProfile.department)throw new Error('Complete your name, school, and department.');
+if(safeProfile.name.length>80||safeProfile.school.length>120||safeProfile.department.length>120||safeProfile.gender.length>40||safeProfile.bio.length>500||safeProfile.level.length>40||safeProfile.state.length>80||safeProfile.interests.length>20||safeProfile.hobbies.length>300||safeProfile.relationshipGoal.length>80||safeProfile.religion.length>80||safeProfile.languages.length>120)throw new Error('One or more profile fields exceed the allowed length. Shorten the text and try again.');
 if(!existing.exists){
 safeProfile.uid=user.uid;
 safeProfile.emailVerified=user.emailVerified;
@@ -773,7 +774,7 @@ const savedProfile=await saveFirebaseProfile(myProfile);
  delete myProfile.selfie;
 }catch(error){
 console.error('Profile save failed:',error);
-showToast('Your profile was not saved. Check your connection and try again.','error');
+showToast(error.message||'Your profile was not saved. Check your connection and try again.','error');
 return;
 }
 }
