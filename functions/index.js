@@ -495,7 +495,7 @@ exports.exportMyData = onCall(async request => {
       db.collection('users').doc(uid).get(),
       db.collection('likes').where('fromUid', '==', uid).limit(500).get(),
       db.collection('likes').where('toUid', '==', uid).limit(500).get(),
-      db.collection('matches').where('memberIds', 'array-contains', uid).limit(100).get(),
+      db.collection('matches').where('memberIds', 'array-contains', uid).limit(25).get(),
       db.collection('reports').where('reporterUid', '==', uid).limit(200).get(),
       db.collection('blocks').where('blockerUid', '==', uid).limit(200).get(),
       db.collection('blocks').where('blockedUid', '==', uid).limit(200).get()
@@ -504,7 +504,7 @@ exports.exportMyData = onCall(async request => {
 
   const conversations = await Promise.all(matches.docs.map(async matchDoc => {
     const messageSnapshot = await db.collection('conversations').doc(matchDoc.id)
-      .collection('messages').orderBy('createdAt', 'desc').limit(200).get();
+      .collection('messages').orderBy('createdAt', 'desc').limit(50).get();
     return {
       conversationId: matchDoc.id,
       status: matchDoc.data().status || 'unknown',
@@ -570,10 +570,10 @@ exports.exportMyData = onCall(async request => {
     },
     limits: {
       likes: 500,
-      matches: 100,
+      matches: 25,
       reportsFiled: 200,
       blocks: 200,
-      messagesPerConversation: 200
+      messagesPerConversation: 50
     }
   };
 });
